@@ -1,4 +1,4 @@
-# app.py - VERSI DIPERBAIKI DENGAN KONTRAS WARNA TINGGI
+# app.py - VERSI FINAL DENGAN SEMUA TEKS JELAS
 import streamlit as st
 
 # ==================== HARUS DULUAN! ====================
@@ -75,7 +75,7 @@ except ImportError as e:
     def show_ai_analysis(): st.info("AI analysis not available")
     def show_statistical_analysis(): st.info("Statistical analysis not available")
 
-# ==================== CSS TEMA HITAM DENGAN KONTRAS TINGGI ====================
+# ==================== CSS TEMA HITAM DENGAN SEMUA TEKS JELAS ====================
 st.markdown("""
 <style>
     /* Background utama */
@@ -87,12 +87,12 @@ st.markdown("""
     /* Sidebar */
     [data-testid="stSidebar"] {
         background-color: #111111;
-        border-right: 1px solid #333333;
+        border-right: 1px solid #444444;
     }
     
     [data-testid="stSidebar"] .stButton button {
         background-color: #222222;
-        color: #ffffff !important; /* KONTRA DITINGKATKAN */
+        color: #ffffff !important;
         border: 1px solid #444444;
         width: 100%;
         transition: all 0.3s ease;
@@ -100,7 +100,8 @@ st.markdown("""
         padding: 12px 20px;
         border-radius: 8px;
         margin: 5px 0;
-        font-weight: 500 !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem;
     }
     
     [data-testid="stSidebar"] .stButton button:hover {
@@ -108,7 +109,6 @@ st.markdown("""
         border-color: #00a8ff;
         transform: translateX(5px);
         box-shadow: 0 4px 8px rgba(0, 168, 255, 0.2);
-        color: #ffffff !important;
     }
     
     /* Main content */
@@ -124,32 +124,80 @@ st.markdown("""
         border-bottom: 2px solid #00a8ff;
         padding-bottom: 10px;
         margin-bottom: 20px;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
     }
     
     /* Text - Kontras tinggi */
     p, span, div, label {
-        color: #eeeeee !important; /* DARI #dddddd KE #eeeeee */
+        color: #f0f0f0 !important;
     }
     
-    /* Input fields - Kontras tinggi */
+    /* INPUT FIELDS - PERBAIKAN KHUSUS UNTUK TEKS PUTIH */
     .stTextInput input, .stSelectbox select, .stNumberInput input, .stTextArea textarea {
         background-color: #1a1a1a !important;
         color: #ffffff !important;
-        border: 1px solid #555555 !important; /* DARI #444444 KE #555555 */
+        border: 1px solid #666666 !important;
         border-radius: 8px !important;
         font-weight: 500 !important;
+        font-size: 0.95rem !important;
     }
     
     .stTextInput input:focus, .stSelectbox select:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
         border-color: #00a8ff !important;
-        box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.3) !important; /* LEBIH TERANG */
+        box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.3) !important;
     }
     
-    /* Placeholder text */
+    /* PERBAIKAN KHUSUS: File uploader text - INI YANG DIPERBAIKI */
+    .stFileUploader label {
+        color: #f0f0f0 !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+    }
+    
+    .stFileUploader p, .stFileUploader span, .stFileUploader div {
+        color: #dddddd !important;
+        font-weight: 500 !important;
+    }
+    
+    .stFileUploader [data-testid="stFileUploadDropzone"] {
+        background-color: #1a1a1a !important;
+        border: 2px dashed #666666 !important;
+        border-radius: 10px !important;
+    }
+    
+    .stFileUploader [data-testid="stFileUploadDropzone"]:hover {
+        border-color: #00a8ff !important;
+        background-color: #222222 !important;
+    }
+    
+    /* PERBAIKAN KHUSUS: Selectbox options - INI YANG DIPERBAIKI */
+    .stSelectbox option {
+        background-color: #222222 !important;
+        color: #ffffff !important;
+        font-weight: 500 !important;
+    }
+    
+    .stSelectbox select option:checked {
+        background-color: #00a8ff !important;
+        color: #ffffff !important;
+    }
+    
+    /* PERBAIKAN KHUSUS: Dropdown/menu items */
+    .stSelectbox div[role="listbox"] div {
+        background-color: #222222 !important;
+        color: #ffffff !important;
+    }
+    
+    .stSelectbox div[role="listbox"] div:hover {
+        background-color: #00a8ff !important;
+        color: #ffffff !important;
+    }
+    
+    /* Placeholder text - lebih terlihat */
     .stTextInput input::placeholder, .stTextArea textarea::placeholder {
         color: #aaaaaa !important;
         opacity: 1 !important;
+        font-weight: 500 !important;
     }
     
     /* Buttons */
@@ -159,14 +207,15 @@ st.markdown("""
         border: none;
         border-radius: 8px;
         padding: 12px 24px;
-        font-weight: bold !important;
+        font-weight: 700 !important;
         transition: all 0.3s ease;
+        font-size: 1rem !important;
     }
     
     .stButton button:hover {
         background-color: #0097e6;
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 168, 255, 0.4); /* LEBIH TERANG */
+        box-shadow: 0 5px 15px rgba(0, 168, 255, 0.4);
     }
     
     .stButton button[kind="secondary"] {
@@ -174,13 +223,13 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* Feature Cards - KONTRA TINGGI */
+    /* Feature Cards */
     .feature-card {
         background: linear-gradient(145deg, #1a1a1a, #222222);
         border-radius: 15px;
         padding: 25px;
-        border: 1px solid #444444; /* DARI #333333 KE #444444 */
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4); /* LEBIH GELAP */
+        border: 1px solid #444444;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
         transition: all 0.3s ease;
         height: 100%;
         display: flex;
@@ -203,15 +252,15 @@ st.markdown("""
         display: flex;
         align-items: center;
         gap: 10px;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
     }
     
     .feature-card p {
-        color: #dddddd !important; /* DARI #cccccc KE #dddddd */
+        color: #e0e0e0 !important;
         line-height: 1.6;
         margin-bottom: 20px;
         flex-grow: 1;
-        font-weight: 500 !important;
+        font-weight: 600 !important;
     }
     
     .feature-card ul {
@@ -221,12 +270,12 @@ st.markdown("""
     }
     
     .feature-card li {
-        color: #eeeeee !important; /* DARI #dddddd KE #eeeeee */
+        color: #f0f0f0 !important;
         padding: 8px 0;
         padding-left: 25px;
         position: relative;
-        border-bottom: 1px solid #444444; /* DARI #333333 KE #444444 */
-        font-weight: 500 !important;
+        border-bottom: 1px solid #444444;
+        font-weight: 600 !important;
     }
     
     .feature-card li:last-child {
@@ -249,7 +298,7 @@ st.markdown("""
         padding: 40px;
         margin-bottom: 30px;
         text-align: center;
-        border: 1px solid #444444; /* DARI #333333 KE #444444 */
+        border: 1px solid #444444;
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
     }
     
@@ -257,15 +306,15 @@ st.markdown("""
         color: #00a8ff !important;
         font-size: 2.5rem;
         margin-bottom: 15px;
-        font-weight: 800 !important;
+        font-weight: 900 !important;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
     
     .hero-subtitle {
-        color: #dddddd !important; /* DARI #cccccc KE #dddddd */
+        color: #e0e0e0 !important;
         font-size: 1.2rem;
         opacity: 0.95;
-        font-weight: 500 !important;
+        font-weight: 600 !important;
     }
     
     /* Status bar */
@@ -274,7 +323,7 @@ st.markdown("""
         border-radius: 10px;
         padding: 20px;
         margin: 20px 0;
-        border: 1px solid #444444; /* DARI #333333 KE #444444 */
+        border: 1px solid #444444;
         display: flex;
         justify-content: space-around;
         align-items: center;
@@ -291,27 +340,27 @@ st.markdown("""
     .status-value {
         color: #00a8ff !important;
         font-size: 1.8rem;
-        font-weight: 800 !important;
+        font-weight: 900 !important;
         margin-bottom: 5px;
         text-shadow: 0 2px 4px rgba(0, 168, 255, 0.3);
     }
     
     .status-label {
-        color: #bbbbbb !important; /* DARI #aaaaaa KE #bbbbbb */
+        color: #cccccc !important;
         font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 1px;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
     }
     
     /* Call to action */
     .cta-section {
         text-align: center;
         padding: 30px;
-        background: linear-gradient(135deg, rgba(0,168,255,0.15) 0%, rgba(0,168,255,0.08) 100%); /* LEBIH TERANG */
+        background: linear-gradient(135deg, rgba(0,168,255,0.15) 0%, rgba(0,168,255,0.08) 100%);
         border-radius: 15px;
         margin: 30px 0;
-        border: 1px solid rgba(0, 168, 255, 0.4); /* LEBIH TERANG */
+        border: 1px solid rgba(0, 168, 255, 0.4);
     }
     
     .cta-buttons {
@@ -327,7 +376,7 @@ st.markdown("""
         color: white !important;
         padding: 12px 24px;
         border-radius: 8px;
-        font-weight: bold !important;
+        font-weight: 800 !important;
         text-decoration: none;
         display: inline-block;
         transition: all 0.3s ease;
@@ -359,65 +408,64 @@ st.markdown("""
     }
     
     .contact-content {
-        color: #eeeeee !important; /* DARI #dddddd KE #eeeeee */
+        color: #f0f0f0 !important;
         font-size: 0.95rem;
         line-height: 1.5;
         flex: 1;
-        font-weight: 500 !important;
+        font-weight: 600 !important;
     }
     
     .contact-label {
         color: #ffffff !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         margin-bottom: 3px;
         display: block;
     }
     
     .contact-value {
-        color: #dddddd !important; /* DARI #cccccc KE #dddddd */
+        color: #e0e0e0 !important;
         line-height: 1.4;
-        font-weight: 500 !important;
+        font-weight: 600 !important;
     }
     
     /* Divider lines */
     hr, .stDivider {
-        border-color: #444444 !important; /* DARI #333333 KE #444444 */
-    }
-    
-    /* Select box options */
-    .stSelectbox option {
-        background-color: #222222 !important;
-        color: #ffffff !important;
+        border-color: #444444 !important;
     }
     
     /* Table styling */
     .stDataFrame, .stTable {
-        color: #eeeeee !important;
+        color: #f0f0f0 !important;
     }
     
     /* Metric cards */
     [data-testid="stMetricValue"] {
         color: #00a8ff !important;
         font-size: 2rem !important;
-        font-weight: 800 !important;
+        font-weight: 900 !important;
     }
     
     [data-testid="stMetricLabel"] {
-        color: #bbbbbb !important; /* DARI #aaaaaa KE #bbbbbb */
-        font-weight: 600 !important;
+        color: #cccccc !important;
+        font-weight: 700 !important;
     }
     
     /* Info/warning/error/success boxes */
     .stAlert {
-        border: 1px solid #555555 !important; /* DARI #444444 KE #555555 */
+        border: 1px solid #555555 !important;
+    }
+    
+    .stAlert p, .stAlert div {
+        color: #f0f0f0 !important;
+        font-weight: 600 !important;
     }
     
     /* Streamlit native text elements */
     .stMarkdown, .stText {
-        color: #eeeeee !important;
+        color: #f0f0f0 !important;
     }
     
-    /* Custom scrollbar - lebih terlihat */
+    /* Custom scrollbar */
     ::-webkit-scrollbar {
         width: 10px;
         height: 10px;
@@ -429,7 +477,7 @@ st.markdown("""
     }
     
     ::-webkit-scrollbar-thumb {
-        background: #555555; /* DARI #444444 KE #555555 */
+        background: #555555;
         border-radius: 5px;
         border: 2px solid #111111;
     }
@@ -438,10 +486,74 @@ st.markdown("""
         background: #666666;
     }
     
-    /* Form labels */
-    .stTextInput label, .stSelectbox label, .stNumberInput label, .stTextArea label {
-        color: #dddddd !important;
+    /* Form labels - SEMUA LABEL JELAS */
+    .stTextInput label, .stSelectbox label, .stNumberInput label, .stTextArea label, 
+    .stFileUploader label, .stRadio label, .stCheckbox label {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 1rem !important;
+        margin-bottom: 8px !important;
+        display: block !important;
+    }
+    
+    /* Radio and checkbox */
+    .stRadio div, .stCheckbox div {
+        color: #f0f0f0 !important;
         font-weight: 600 !important;
+    }
+    
+    /* Slider labels */
+    .stSlider label {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+    }
+    
+    .stSlider div[data-baseweb="slider"] {
+        color: #f0f0f0 !important;
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background-color: #222222 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        border: 1px solid #444444 !important;
+    }
+    
+    .streamlit-expanderContent {
+        background-color: #1a1a1a !important;
+        color: #f0f0f0 !important;
+        border: 1px solid #444444 !important;
+        border-top: none !important;
+    }
+    
+    /* Tooltip */
+    [data-testid="stTooltip"] {
+        background-color: #222222 !important;
+        color: #ffffff !important;
+        border: 1px solid #444444 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* PERBAIKAN KHUSUS: Untuk semua teks kecil yang sulit terbaca */
+    small, .stSmall {
+        color: #cccccc !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* PERBAIKAN KHUSUS: Text yang berada dalam container putih Streamlit */
+    div[style*="background-color: white"], 
+    div[style*="background-color: #fff"],
+    div[style*="background: white"],
+    div[style*="background: #fff"] {
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
+    }
+    
+    /* Force dark text to white in all cases */
+    * {
+        --text-color: #ffffff !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -466,15 +578,15 @@ else:
     flood_controller = FloodReportController()
     realtime_controller = RealTimeDataController()
 
-# ==================== SIDEBAR NAVIGATION DENGAN KONTAK ====================
+# ==================== SIDEBAR NAVIGATION ====================
 def setup_sidebar():
     with st.sidebar:
-        # Logo & Title dengan kontras tinggi
+        # Logo & Title
         st.markdown("""
         <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #1a1a1a 0%, #222222 100%); border-radius: 10px; border: 1px solid #444444;">
             <div style="color: #00a8ff; font-size: 2.5rem; margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,168,255,0.3);">🌊</div>
-            <h2 style="color: #00a8ff; font-size: 1.6rem; margin: 0; font-weight: 700;">SISTEM BANJIR</h2>
-            <p style="color: #bbbbbb; font-size: 0.95rem; margin-top: 8px; font-weight: 500;">Peringatan Dini & Analisis</p>
+            <h2 style="color: #00a8ff; font-size: 1.6rem; margin: 0; font-weight: 900;">SISTEM BANJIR</h2>
+            <p style="color: #cccccc; font-size: 0.95rem; margin-top: 8px; font-weight: 700;">Peringatan Dini & Analisis</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -484,7 +596,7 @@ def setup_sidebar():
         if 'current_page' not in st.session_state:
             st.session_state.current_page = "Home"
         
-        # Menu items dengan icon - TEKS LEBIH KONTRA
+        # Menu items
         menu_items = [
             (" Home", "Home"),
             (" Lapor Banjir", "Lapor Banjir"),
@@ -495,7 +607,7 @@ def setup_sidebar():
             (" Analisis Statistik", "Analisis Gumbel")
         ]
         
-        # Display menu dengan teks lebih putih
+        # Display menu
         for text, page in menu_items:
             if st.button(text, key=f"menu_{page}", use_container_width=True,
                         type="primary" if st.session_state.current_page == page else "secondary"):
@@ -505,9 +617,8 @@ def setup_sidebar():
         st.markdown("---")
         
         # ==================== KONTAK KAMI ====================
-        st.markdown("### KONTAK KAMI")
+        st.markdown("### KONTAK KAMI:")
         
-        # Kontak dengan kontras tinggi
         st.markdown("""
         <div style="background: rgba(0, 168, 255, 0.15); padding: 20px; border-radius: 10px; margin: 15px 0; border: 1px solid rgba(0,168,255,0.3);">
             <div class="contact-row">
@@ -537,13 +648,12 @@ def setup_sidebar():
         """, unsafe_allow_html=True)
         
         st.markdown("---")
-        
 
 # ==================== PAGE FUNCTIONS ====================
 def show_homepage():
-    """Display homepage dengan design profesional dan kontras tinggi"""
+    """Display homepage"""
     
-    # HERO SECTION dengan kontras tinggi
+    # HERO SECTION
     st.markdown("""
     <div class="hero-section">
         <div class="hero-title">🌊 SISTEM PERINGATAN DINI BANJIR</div>
@@ -553,7 +663,7 @@ def show_homepage():
     </div>
     """, unsafe_allow_html=True)
     
-    # STATUS BAR dengan kontras tinggi
+    # STATUS BAR
     st.markdown("""
     <div class="status-bar">
         <div class="status-item">
@@ -561,21 +671,17 @@ def show_homepage():
             <div class="status-label">MONITORING</div>
         </div>
         <div class="status-item">
-            <div class="status-value">99%</div>
+            <div class="status-value">90%</div>
             <div class="status-label">AKURASI</div>
         </div>
         <div class="status-item">
             <div class="status-value">REAL-TIME</div>
             <div class="status-label">UPDATE</div>
         </div>
-        <div class="status-item">
-            <div class="status-value">AI + STAT</div>
-            <div class="status-label">INTEGRASI</div>
-        </div>
     </div>
     """, unsafe_allow_html=True)
     
-    # FEATURES SECTION - CARDS dengan teks lebih putih
+    # FEATURES SECTION
     st.markdown("### FITUR UTAMA SISTEM")
     
     col1, col2 = st.columns(2)
@@ -611,7 +717,7 @@ def show_homepage():
         """, unsafe_allow_html=True)
     
     # ADDITIONAL FEATURES
-    st.markdown("### 🔧 TEKNOLOGI PENDUKUNG")
+    st.markdown("### TEKNOLOGI PENDUKUNG")
     
     col3, col4 = st.columns(2)
     
@@ -643,11 +749,11 @@ def show_homepage():
         </div>
         """, unsafe_allow_html=True)
     
-    # CALL TO ACTION dengan kontras tinggi
+    # CALL TO ACTION
     st.markdown("""
     <div class="cta-section">
-        <h3 style="color: #00a8ff !important; margin-bottom: 15px; font-weight: 800;">🚀 SIAP MENGGUNAKAN SISTEM?</h3>
-        <p style="color: #dddddd !important; margin-bottom: 20px; font-weight: 500;">
+        <h3 style="color: #00a8ff !important; margin-bottom: 15px; font-weight: 900;">🚀 SIAP MENGGUNAKAN SISTEM?</h3>
+        <p style="color: #e0e0e0 !important; margin-bottom: 20px; font-weight: 700;">
             Pilih menu di sidebar untuk mulai menggunakan fitur lengkap sistem kami.
             <br><strong style="color: #ffffff !important;">📈 Sistem telah memproses:</strong> 1,245 data historis | 
             <strong style="color: #ffffff !important;">🎯 Akurasi:</strong> 89.2%
@@ -656,11 +762,11 @@ def show_homepage():
     """, unsafe_allow_html=True)
 
 def show_flood_report_page():
-    """Display flood report page dengan kontras tinggi"""
+    """Display flood report page"""
     st.markdown("""
     <div class="hero-section" style="padding: 30px;">
-        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 800;">📝 FORM LAPORAN BANJIR</h2>
-        <p style="color: #dddddd !important; font-size: 1.1rem; font-weight: 500;">
+        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 900;">📝 FORM LAPORAN BANJIR</h2>
+        <p style="color: #e0e0e0 !important; font-size: 1.1rem; font-weight: 700;">
             Laporkan kejadian banjir di sekitar Anda untuk membantu sistem peringatan dini.
         </p>
     </div>
@@ -668,11 +774,11 @@ def show_flood_report_page():
     show_flood_report_form(flood_controller)
 
 def show_current_month_reports_page():
-    """Display current month's reports dengan kontras tinggi"""
+    """Display current month's reports"""
     st.markdown("""
     <div class="hero-section" style="padding: 30px;">
-        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 800;">📊 LAPORAN HARIAN</h2>
-        <p style="color: #dddddd !important; font-size: 1.1rem; font-weight: 500;">
+        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 900;">📊 LAPORAN HARIAN</h2>
+        <p style="color: #e0e0e0 !important; font-size: 1.1rem; font-weight: 700;">
             Data laporan banjir real-time dari masyarakat.
         </p>
     </div>
@@ -680,11 +786,11 @@ def show_current_month_reports_page():
     show_current_month_reports(flood_controller)
 
 def show_monthly_reports_page():
-    """Display monthly reports summary dengan kontras tinggi"""
+    """Display monthly reports summary"""
     st.markdown("""
     <div class="hero-section" style="padding: 30px;">
-        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 800;">📈 REKAPAN BULANAN</h2>
-        <p style="color: #dddddd !important; font-size: 1.1rem; font-weight: 500;">
+        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 900;">📈 REKAPAN BULANAN</h2>
+        <p style="color: #e0e0e0 !important; font-size: 1.1rem; font-weight: 700;">
             Analisis dan statistik laporan banjir bulan ini.
         </p>
     </div>
@@ -692,11 +798,11 @@ def show_monthly_reports_page():
     show_monthly_reports_summary(flood_controller)
 
 def show_prediction_page():
-    """Display flood prediction page dengan kontras tinggi"""
+    """Display flood prediction page"""
     st.markdown("""
     <div class="hero-section" style="padding: 30px;">
-        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 800;">🔮 PREDIKSI REAL-TIME</h2>
-        <p style="color: #dddddd !important; font-size: 1.1rem; font-weight: 500;">
+        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 900;"> PREDIKSI REAL-TIME</h2>
+        <p style="color: #e0e0e0 !important; font-size: 1.1rem; font-weight: 700;">
             Monitoring dan prediksi banjir berdasarkan data BBWS Bengawan Solo.
         </p>
     </div>
@@ -704,11 +810,11 @@ def show_prediction_page():
     show_prediction_dashboard(realtime_controller)
 
 def show_ai_analysis_page():
-    """Display AI analysis page dengan kontras tinggi"""
+    """Display AI analysis page"""
     st.markdown("""
     <div class="hero-section" style="padding: 30px;">
-        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 800;">🤖 ANALISIS NEURAL NETWORK</h2>
-        <p style="color: #dddddd !important; font-size: 1.1rem; font-weight: 500;">
+        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 900;"> ANALISIS NEURAL NETWORK</h2>
+        <p style="color: #e0e0e0 !important; font-size: 1.1rem; font-weight: 700;">
             Prediksi risiko banjir menggunakan Artificial Intelligence.
         </p>
     </div>
@@ -716,11 +822,11 @@ def show_ai_analysis_page():
     show_ai_analysis()
 
 def show_gumbel_analysis_page():
-    """Display statistical analysis page dengan kontras tinggi"""
+    """Display statistical analysis page"""
     st.markdown("""
     <div class="hero-section" style="padding: 30px;">
-        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 800;">📊 ANALISIS DISTRIBUSI GUMBEL</h2>
-        <p style="color: #dddddd !important; font-size: 1.1rem; font-weight: 500;">
+        <h2 style="color: #00a8ff !important; margin-bottom: 10px; font-weight: 900;"> ANALISIS DISTRIBUSI GUMBEL</h2>
+        <p style="color: #e0e0e0 !important; font-size: 1.1rem; font-weight: 700;">
             Analisis statistik untuk prediksi kejadian ekstrem.
         </p>
     </div>
