@@ -31,9 +31,12 @@ class FloodReportController:
             print(f"⚠️ Error in check_daily_limit: {e}")
             return True
 
-    def submit_report(self, address, flood_height, reporter_name, reporter_phone=None, photo_file=None):
-        """Submit new flood report dengan limit validation"""
-        photo_path = None
+    def submit_report(self, nama, lokasi, ketinggian, foto_path):
+    LIMIT_HARIAN = 10
+    today_count = self.get_today_report_count()
+
+    if today_count >= LIMIT_HARIAN:
+        return False, f"Kuota laporan hari ini sudah habis. (Limit {LIMIT_HARIAN}/hari)"
         
         try:
             # Get client IP
@@ -102,9 +105,14 @@ class FloodReportController:
 
     # ============ FUNGSI UNTUK VIEWS ============
     
-    def get_today_reports(self):
-        """Get today's flood reports"""
-        return self.flood_model.get_today_reports()
+    def get_today_report_count(self):
+    import sqlite3
+    conn = sqlite3.connect("flood_system.db")
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM flood_reports WHERE DATE(timestamp) = DATE('now')")
+    count = c.fetchone()[0]
+    conn.close()
+    return count
 
     def get_month_reports(self):
         """Get this month's flood reports"""
@@ -130,4 +138,5 @@ class FloodReportController:
             return st.session_state.user_ip
         except:
             # Fallback untuk development
+
             return "user_local_test"
