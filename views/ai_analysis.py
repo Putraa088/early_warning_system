@@ -1,5 +1,5 @@
 import streamlit as st
-from ai_models.model_ann import predict_flood_ann_with_temp_range, get_ann_parameters
+from model_ann import predict_flood_ann_with_temp_range, get_ann_parameters
 
 # Tambahkan di bagian atas fungsi show_ai_analysis() dan show_statistical_analysis()
 st.markdown("""
@@ -327,3 +327,4 @@ def show_live_demo():
                 - 🔴 Bawa tas darurat yang sudah disiapkan
 
                 """)
+
