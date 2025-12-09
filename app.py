@@ -1,7 +1,3 @@
-# Refactored Streamlit app (kept UI structure & positions)
-# Perubahan: CSS disederhanakan dan dibuat lebih profesional, beberapa perbaikan minor
-# Tanpa mengubah layout/posisi halaman atau elemen UI.
-
 import streamlit as st
 import sys
 import os
@@ -152,6 +148,16 @@ small, .stSmall{ color: var(--muted) !important; }
 
 /* Make containers that were white adapt to dark theme */
 div[style*="background-color: white"], div[style*="#fff"], div[style*="background: white"]{ background-color: transparent !important; color:#e8eef1 !important; }
+
+
+.stFileUploader label {
+    color: #000000 !important;
+}
+
+.stFileUploader div div {
+    color: #000000 !important;
+}
+
 </style>
 """
 
@@ -294,7 +300,7 @@ def show_homepage():
                 <p>Distribusi Gumbel untuk analisis nilai ekstrem dan perhitungan periode ulang banjir.</p>
                 <ul>
                     <li>Probabilitas kejadian ekstrem</li>
-                    <li>Periode ulang 10-100 tahun</li>
+                    <li>Periode ulang 5-50 tahun</li>
                     <li>Risk assessment terstruktur</li>
                     <li>Validasi statistik komprehensif</li>
                     <li>Visualisasi data interaktif</li>
@@ -314,7 +320,6 @@ def show_homepage():
                 <p>SQLite dengan struktur data teroptimasi untuk penyimpanan data historis dan real-time.</p>
                 <ul>
                     <li>Penyimpanan data laporan</li>
-                    <li>Statistik pengunjung</li>
                     <li>Log prediksi AI</li>
                     <li>Backup otomatis</li>
                 </ul>
@@ -329,7 +334,6 @@ def show_homepage():
                 <h3> DASHBOARD</h3>
                 <p>Interface interaktif dengan visualisasi data real-time dan kontrol yang mudah digunakan.</p>
                 <ul>
-                    <li>Tema dark mode profesional</li>
                     <li>Chart interaktif</li>
                     <li>Responsive design</li>
                     <li>Multi-language support</li>
@@ -344,7 +348,6 @@ def show_homepage():
         <div class="cta-section">
             <h3 style="color: var(--accent) !important; margin-bottom: 10px; font-weight:900;">🚀 SIAP MENGGUNAKAN SISTEM?</h3>
             <p style="color:#dfe9ec !important; margin-bottom:6px; font-weight:700;">Pilih menu di sidebar untuk mulai menggunakan fitur lengkap sistem kami.</p>
-            <p style="color:#c9dadd !important; font-weight:600;">📈 Sistem telah memproses: 1,245 data historis | 🎯 Akurasi: 89.2%</p>
         </div>
         """,
         unsafe_allow_html=True
