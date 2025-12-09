@@ -537,7 +537,7 @@ def show_homepage():
             <p>Distribusi Gumbel untuk analisis nilai ekstrem dan perhitungan periode ulang banjir.</p>
             <ul>
                 <li>Probabilitas kejadian ekstrem</li>
-                <li>Periode ulang 10-100 tahun</li>
+                <li>Periode ulang 5-50 tahun</li>
                 <li>Risk assessment terstruktur</li>
                 <li>Validasi statistik komprehensif</li>
                 <li>Visualisasi data interaktif</li>
@@ -557,7 +557,6 @@ def show_homepage():
             <p>SQLite dengan struktur data teroptimasi untuk penyimpanan data historis dan real-time.</p>
             <ul>
                 <li>Penyimpanan data laporan</li>
-                <li>Statistik pengunjung</li>
                 <li>Log prediksi AI</li>
                 <li>Backup otomatis</li>
             </ul>
@@ -570,7 +569,6 @@ def show_homepage():
             <h3>📱 Dashboard</h3>
             <p>Interface interaktif dengan visualisasi data real-time dan kontrol yang mudah digunakan.</p>
             <ul>
-                <li>Tema dark mode profesional</li>
                 <li>Chart interaktif</li>
                 <li>Responsive design</li>
                 <li>Multi-language support</li>
@@ -586,11 +584,6 @@ def show_homepage():
             Pilih menu di sidebar untuk mulai menggunakan fitur lengkap sistem kami.
             <br><strong>📈 Sistem telah memproses:</strong> 1,245 data historis | <strong>🎯 Akurasi:</strong> 89.2%
         </p>
-        <div class="cta-buttons">
-            <div class="cta-button">📝 Lapor Banjir</div>
-            <div class="cta-button" style="background: #333333;">🔮 Prediksi Real-time</div>
-            <div class="cta-button" style="background: #444444;">🤖 Analisis AI</div>
-        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -691,3 +684,4 @@ if __name__ == "__main__":
         st.session_state.current_page = "Home"
     
     main()
+
