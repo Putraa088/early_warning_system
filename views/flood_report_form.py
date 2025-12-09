@@ -2,82 +2,22 @@ import streamlit as st
 import os
 
 def show_flood_report_form(controller):
-    """Display flood report form dengan tema hitam"""
-    
-    st.markdown("""
-    <style>
-    .form-container {
-        background: linear-gradient(145deg, #1a1a1a, #222222);
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        margin: 20px 0;
-        border: 1px solid #333333;
-    }
-    
-    .form-title {
-        color: #00a8ff;
-        text-align: center;
-        margin-bottom: 25px;
-        font-size: 1.8em;
-        font-weight: 700;
-        border-bottom: 2px solid #00a8ff;
-        padding-bottom: 10px;
-    }
-    
-    .upload-section {
-        background: #2a2a2a;
-        border: 2px dashed #444444;
-        border-radius: 10px;
-        padding: 25px;
-        text-align: center;
-        margin: 20px 0;
-        color: #cccccc;
-    }
-    
-    .upload-section:hover {
-        border-color: #00a8ff;
-        background: #333333;
-    }
-    
-    .status-valid {
-        color: #00d26a;
-        font-weight: bold;
-    }
-    
-    .status-invalid {
-        color: #ff4b4b;
-        font-weight: bold;
-    }
-    
-    .validation-box {
-        background: #2a2a2a;
-        padding: 15px;
-        border-radius: 8px;
-        border-left: 4px solid #00a8ff;
-        margin: 15px 0;
-        color: #cccccc;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Form Container
-    st.markdown("""
-    <div class="form-container">
-        <div class="form-title">📋 FORM LAPORAN BANJIR</div>
+    LIMIT_HARIAN = 5
+    today_count = controller.get_today_report_count()
+    sisa = LIMIT_HARIAN - today_count
+
+    st.markdown(f"""
+        <div style='padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);
+        background:rgba(0,174,230,0.08);margin-bottom:15px;'>
+            <h4 style='margin:0;color:#00aee6;'>📌 Kuota Laporan Harian</h4>
+            <p style='margin:0;font-size:1.1rem;'>Sisa kuota: <b>{sisa}</b> laporan lagi.</p>
+        </div>
     """, unsafe_allow_html=True)
 
-    # Check daily limit
-    try:
-        client_ip = controller.get_client_ip()
-        can_submit = controller.check_daily_limit(client_ip)
-        
-        if not can_submit:
-            st.error("❌ Maaf, Anda telah mencapai batas maksimal 10 laporan per hari. Silakan kembali besok.")
-            st.markdown('</div>', unsafe_allow_html=True)
-            return
-    except:
-        pass
+    if sisa <= 0:
+        st.error("❌ Kuota laporan hari ini sudah habis.")
+        return
+
 
     # Upload Foto
     st.markdown('<div class="upload-section">', unsafe_allow_html=True)
@@ -226,4 +166,5 @@ def show_flood_report_form(controller):
                 st.error(f"❌ Error: {str(e)}")
     
     # Close form container
+
     st.markdown('</div>', unsafe_allow_html=True)
