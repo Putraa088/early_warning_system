@@ -416,13 +416,13 @@ def setup_sidebar():
         
         # Menu items dengan icon
         menu_items = [
-            ("🏠 Dashboard", "Home"),
-            ("📝 Lapor Banjir", "Lapor Banjir"),
-            ("📊 Laporan Harian", "Laporan Harian"),
-            ("📈 Rekapan Bulanan", "Rekapan Bulanan"),
-            ("🔮 Prediksi Real-time", "Prediksi Banjir"),
-            ("🤖 Analisis AI", "Analisis ANN"),
-            ("📊 Analisis Statistik", "Analisis Gumbel")
+            (" Home", "Home"),
+            (" Lapor Banjir", "Lapor Banjir"),
+            (" Laporan Harian", "Laporan Harian"),
+            (" Rekapan Bulanan", "Rekapan Bulanan"),
+            (" Prediksi Real-time", "Prediksi Banjir"),
+            (" Analisis AI", "Analisis ANN"),
+            (" Analisis Statistik", "Analisis Gumbel")
         ]
         
         # Display menu
@@ -435,7 +435,7 @@ def setup_sidebar():
         st.markdown("---")
         
         # ==================== KONTAK KAMI ====================
-        st.markdown("### 📞 KONTAK KAMI")
+        st.markdown("### KONTAK KAMI:")
         
         # Lokasi
         st.markdown("""
@@ -455,7 +455,7 @@ def setup_sidebar():
                 </div>
             </div>
             <div class="contact-row">
-                <div class="contact-icon">📱</div>
+                <div class="contact-icon">📞</div>
                 <div class="contact-content">
                     <div class="contact-label">Telepon:</div>
                     <div class="contact-value">085156959561</div>
@@ -465,14 +465,6 @@ def setup_sidebar():
         """, unsafe_allow_html=True)
         
         st.markdown("---")
-        
-        # Footer
-        st.markdown("""
-        <div style="text-align: center; color: #666666; font-size: 0.8rem; padding: 10px;">
-            <p>© 2024 Sistem Peringatan Dini Banjir</p>
-            <p>v2.0 | AI-Powered</p>
-        </div>
-        """, unsafe_allow_html=True)
 
 # ==================== PAGE FUNCTIONS ====================
 def show_homepage():
@@ -511,7 +503,7 @@ def show_homepage():
     """, unsafe_allow_html=True)
     
     # FEATURES SECTION - CARDS SEJAJAR
-    st.markdown("### 🚀 FITUR UTAMA SISTEM")
+    st.markdown("### FITUR UTAMA SISTEM")
     
     col1, col2 = st.columns(2)
     
@@ -519,7 +511,7 @@ def show_homepage():
         st.markdown("""
         <div class="feature-card">
             <h3>🤖 KECERDASAN BUATAN</h3>
-            <p>Neural Network canggih untuk prediksi real-time berdasarkan pola data historis dengan akurasi tinggi.</p>
+            <p>Neural Network untuk prediksi real-time berdasarkan pola data historis dengan akurasi tinggi.</p>
             <ul>
                 <li>Analisis curah hujan otomatis</li>
                 <li>Monitoring tinggi air real-time</li>
@@ -684,4 +676,5 @@ if __name__ == "__main__":
         st.session_state.current_page = "Home"
     
     main()
+
 
