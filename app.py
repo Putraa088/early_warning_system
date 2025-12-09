@@ -1,6 +1,6 @@
-import streamlit as st
-import os
+# app.py - TAMBAHKAN SETELAH st.set_page_config()
 import sys
+import os
 
 # ==================== HARUS DULUAN! ====================
 st.set_page_config(
@@ -10,9 +10,21 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ==================== SETUP PATH ====================
+# ==================== FIX PYTHON PATH ====================
 current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(current_dir)
+
+# Tambahkan root directory ke path
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+# Tambahkan juga subdirectories ke path
+for folder in ['controllers', 'models', 'views']:
+    folder_path = os.path.join(current_dir, folder)
+    if os.path.exists(folder_path) and folder_path not in sys.path:
+        sys.path.insert(0, folder_path)
+
+# Debug (opsional, bisa dihapus setelah berhasil)
+# st.write(f"Python path: {sys.path}")
 
 # ==================== INIT DATABASE ====================
 # Pastikan database sudah ada
@@ -475,4 +487,5 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     
+
     main()
