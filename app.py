@@ -251,27 +251,6 @@ def setup_sidebar():
         st.markdown("---")
 
 # ==================== PAGES (structure preserved) ====================
-def show_homepage():
-    st.markdown(
-        """
-        <div class="hero-section">
-            <div class="hero-title">🌊 SISTEM PERINGATAN DINI BANJIR</div>
-            <div class="hero-subtitle">Integrasi Deep Learning dan Analisis Statistik untuk Prediksi Banjir yang Akurat</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        """
-        <div class="status-bar">
-            <div class="status-item"><div class="status-value">24/7</div><div class="status-label">MONITORING</div></div>
-            <div class="status-item"><div class="status-value">90%</div><div class="status-label">AKURASI</div></div>
-            <div class="status-item"><div class="status-value">REAL-TIME</div><div class="status-label">UPDATE</div></div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
 
     st.markdown("### FITUR UTAMA SISTEM")
     col1, col2 = st.columns(2)
@@ -453,3 +432,4 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
+
