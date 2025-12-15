@@ -76,4 +76,3 @@ def show_flood_report_form(controller):
                                 st.error(message)
                         except Exception as e:
                             st.error(f"Terjadi kesalahan: {str(e)}")
-                        
