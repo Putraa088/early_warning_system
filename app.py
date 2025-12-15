@@ -1,7 +1,9 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import sys
 import os
 import traceback
+import time
 
 # ==================== CONFIG ====================
 st.set_page_config(
@@ -21,29 +23,25 @@ for folder in ['controllers', 'models', 'views']:
     if os.path.exists(folder_path) and folder_path not in sys.path:
         sys.path.insert(0, folder_path)
 
-# ==================== DATABASE INITIALIZATION (SAFE) ====================
-# Note: kept behavior but added clearer messaging and avoided a silent crash
+# ==================== DATABASE INITIALIZATION ====================
 DB_PATH = 'flood_system.db'
 if not os.path.exists(DB_PATH):
-    st.warning("⚠️ Database belum diinisialisasi. Menjalankan init database...")
+    st.warning("Database belum diinisialisasi. Menjalankan init database...")
     try:
         from init_tables import init_database
         init_database()
-        st.success("✅ Database berhasil diinisialisasi!")
+        st.success("Database berhasil diinisialisasi!")
     except Exception as e:
-        st.error(f"❌ Gagal inisialisasi database: {e}")
-        st.exception(traceback.format_exc())
+        st.error(f"Gagal inisialisasi database: {e}")
         st.stop()
 
-# ==================== IMPORT CONTROLLERS (dengan fallback yang informatif) ====================
+# ==================== IMPORT CONTROLLERS ====================
 try:
     from controllers.VisitorController import VisitorController
     from controllers.FloodReportController import FloodReportController
     from controllers.RealTimeDataController import RealTimeDataController
 except Exception as e:
-    st.error(f"❌ Import Error Controller: {e}")
-    st.info("Menggunakan mode fallback untuk pengembangan/testing.")
-    st.exception(traceback.format_exc())
+    st.error(f"Import Error Controller: {e}")
 
     class VisitorController:
         def track_visit(self, page):
@@ -61,22 +59,41 @@ except Exception as e:
         def get_comprehensive_data(self):
             return []
 
-# ==================== IMPORT VIEWS (dengan fallback informatif) ====================
+# ==================== IMPORT MODEL PREDICTION ====================
 try:
-    from views.visitor_stats import show_visitor_stats
+    from model_ann import predict_flood_ann_with_temp_range
+except ImportError:
+    def predict_flood_ann_with_temp_range(rainfall, water_level, humidity, temp_min, temp_max):
+        """Fallback prediction function"""
+        temp_avg = (temp_min + temp_max) / 2
+        risk = min(1.0, (rainfall / 300) * 0.5 + (water_level / 150) * 0.3 + (humidity / 100) * 0.15 + ((temp_avg - 20) / 20) * 0.05)
+        
+        if risk >= 0.7:
+            status = "TINGGI"
+            message = "WASPADA! Potensi banjir tinggi"
+        elif risk >= 0.4:
+            status = "MENENGAH"
+            message = "SIAGA! Pantau perkembangan"
+        else:
+            status = "RENDAH"
+            message = "AMAN, tetap waspada"
+        
+        return {
+            'risk_level': round(risk, 3),
+            'status': status,
+            'message': message,
+            'temperature_range': {'min': temp_min, 'max': temp_max, 'average': temp_avg}
+        }
+
+# ==================== IMPORT VIEWS ====================
+try:
     from views.flood_report_form import show_flood_report_form
     from views.flood_reports_table import show_current_month_reports
     from views.monthly_reports import show_monthly_reports_summary
     from views.prediction_dashboard import show_prediction_dashboard
-    from views.ai_analysis import show_ai_analysis
-    from views.statistical_analysis import show_statistical_analysis
+    # Menghapus import untuk AI dan Statistical analysis
 except Exception as e:
-    st.error(f"❌ Import Error Views: {e}")
-    st.info("Beberapa view tidak tersedia, menjalankan fallback sederhana.")
-    st.exception(traceback.format_exc())
-
-    def show_visitor_stats(*args, **kwargs):
-        st.info("Visitor stats not available")
+    st.error(f"Import Error Views: {e}")
 
     def show_flood_report_form(*args, **kwargs):
         st.info("Report form not available")
@@ -90,74 +107,206 @@ except Exception as e:
     def show_prediction_dashboard(*args, **kwargs):
         st.info("Prediction dashboard not available")
 
-    def show_ai_analysis(*args, **kwargs):
-        st.info("AI analysis not available")
-
-    def show_statistical_analysis(*args, **kwargs):
-        st.info("Statistical analysis not available")
-
-# ==================== REFINED (PROFESSIONAL) CSS THEME ====================
-# Keputusan: keep CSS inline for portability, but make it smaller and safer.
+# ==================== CSS THEME ====================
 CSS_THEME = r"""
 <style>
 :root{
   --bg:#0b0f12;
   --panel:#0f1416;
   --muted:#9aa6ad;
-  --accent:#00aee6; /* refined cyan */
+  --accent:#00aee6;
   --card:#0f1416;
   --border: rgba(255,255,255,0.04);
 }
 
-/* App background */
-.stApp, .block-container{ background-color: var(--bg) !important; color: #e8eef1 !important; }
-
-/* Sidebar */
-[data-testid="stSidebar"]{ background-color: var(--panel) !important; border-right: 1px solid var(--border) !important; }
-[data-testid="stSidebar"] .stButton button{ background: transparent; color: #e8eef1 !important; border: 1px solid transparent; width:100%; padding:10px 16px; text-align:left; border-radius:8px; font-weight:600; }
-[data-testid="stSidebar"] .stButton button:hover{ background: rgba(0,174,230,0.06); transform: translateX(3px); }
-
-/* Hero & cards */
-.hero-section, .feature-card, .cta-section{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid var(--border); border-radius:12px; }
-.feature-card{ padding:20px; }
-.feature-card h3{ color: var(--accent); margin-bottom:10px; font-weight:800; }
-
-/* Text / headings */
-h1,h2,h3{ color:#f7fbfc !important; }
-.stMarkdown, .stText, p, span, label{ color: #dfe9ec !important; }
-
-/* Inputs */
-.stTextInput input, .stNumberInput input, .stTextArea textarea, .stSelectbox select{ background: #0b1113 !important; color:#e8eef1 !important; border:1px solid rgba(255,255,255,0.04) !important; border-radius:8px !important; padding:8px !important; }
-.stTextInput input::placeholder, .stTextArea textarea::placeholder{ color: var(--muted) !important; opacity:1 !important; }
-
-/* File uploader */
-.stFileUploader [data-testid="stFileUploadDropzone"]{ background:#0b1113 !important; border:1px dashed rgba(255,255,255,0.03) !important; border-radius:10px; }
-
-/* Buttons */
-.stButton button{ background: var(--accent) !important; color: #041016 !important; font-weight:700; padding:10px 16px; border-radius:8px; border:none; }
-.stButton button:hover{ filter:brightness(0.95); transform:translateY(-2px); }
-
-/* Small text */
-small, .stSmall{ color: var(--muted) !important; }
-
-/* Reduce aggressive global selectors to avoid breaking Streamlit internals */
-
-/* Tables and metrics */
-.stDataFrame, .stTable{ color:#e8eef1 !important; }
-[data-testid="stMetricValue"]{ color: var(--accent) !important; }
-
-/* Make containers that were white adapt to dark theme */
-div[style*="background-color: white"], div[style*="#fff"], div[style*="background: white"]{ background-color: transparent !important; color:#e8eef1 !important; }
-
-
-.stFileUploader label {
-    color: #000000 !important;
+.stApp, .block-container{ 
+    background-color: var(--bg) !important; 
+    color: #e8eef1 !important; 
 }
 
-.stFileUploader div div {
-    color: #000000 !important;
+[data-testid="stSidebar"]{ 
+    background-color: var(--panel) !important; 
+    border-right: 1px solid var(--border) !important; 
 }
 
+[data-testid="stSidebar"] .stButton button{ 
+    background: transparent; 
+    color: #e8eef1 !important; 
+    border: 1px solid transparent; 
+    width:100%; 
+    padding: 12px 20px;
+    text-align: left; 
+    border-radius: 8px; 
+    font-weight: 500;
+    font-size: 16px;
+    margin: 4px 0;
+    transition: all 0.2s ease;
+}
+
+[data-testid="stSidebar"] .stButton button:hover{ 
+    background: rgba(0,174,230,0.08); 
+    transform: translateX(4px);
+}
+
+[data-testid="stSidebar"] .stButton button:active{ 
+    background: rgba(0,174,230,0.12); 
+}
+
+.sidebar-header {
+    text-align: center;
+    margin: 20px 0 30px 0;
+    padding: 0 10px;
+}
+
+.sidebar-title {
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 10px 0 5px 0;
+}
+
+.hero-section, .feature-card, .cta-section{ 
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); 
+    border:1px solid var(--border); 
+    border-radius:12px; 
+}
+
+.feature-card{ 
+    padding: 24px; 
+}
+
+.feature-card h3{ 
+    color: var(--accent); 
+    margin-bottom:12px; 
+    font-weight:700; 
+}
+
+h1,h2,h3{ 
+    color:#f7fbfc !important; 
+}
+
+.stMarkdown, .stText, p, span, label{ 
+    color: #dfe9ec !important; 
+}
+
+.stTextInput input, .stNumberInput input, .stTextArea textarea, .stSelectbox select{ 
+    background: #0b1113 !important; 
+    color:#e8eef1 !important; 
+    border:1px solid rgba(255,255,255,0.04) !important; 
+    border-radius:8px !important; 
+    padding:10px 12px !important; 
+}
+
+.stTextInput input::placeholder, .stTextArea textarea::placeholder{ 
+    color: var(--muted) !important; 
+    opacity:1 !important; 
+}
+
+.stFileUploader [data-testid="stFileUploadDropzone"]{ 
+    background:#0b1113 !important; 
+    border:1px dashed rgba(255,255,255,0.03) !important; 
+    border-radius:10px; 
+}
+
+.stButton button{ 
+    background: var(--accent) !important; 
+    color: #041016 !important; 
+    font-weight:600; 
+    padding: 12px 24px;
+    border-radius:8px; 
+    border:none; 
+    font-size: 16px;
+}
+
+.stButton button:hover{ 
+    filter:brightness(0.95); 
+    transform:translateY(-2px);
+}
+
+.stSmall{ 
+    color: var(--muted) !important; 
+}
+
+.stDataFrame, .stTable{ 
+    color:#e8eef1 !important; 
+}
+
+[data-testid="stMetricValue"]{ 
+    color: var(--accent) !important; 
+}
+
+.contact-info {
+    background: rgba(0,174,230,0.06); 
+    padding: 16px;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+.contact-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.contact-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.contact-icon {
+    font-size: 1.2rem;
+    margin-right: 12px;
+    color: var(--accent);
+    min-width: 24px;
+}
+
+.contact-content {
+    flex: 1;
+}
+
+.contact-label {
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.contact-value {
+    color: #dfe9ec;
+    font-size: 0.95rem;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.text-center {
+    text-align: center !important;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.section-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.04);
+    margin: 25px 0;
+}
+
+.prediction-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px;
+    margin: 20px 0;
+}
+
+.prediction-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
 </style>
 """
 
@@ -182,247 +331,541 @@ else:
     flood_controller = FloodReportController()
     realtime_controller = RealTimeDataController()
 
-# ==================== SIDEBAR NAVIGATION (SAME STRUCTURE) ====================
+# ==================== SIDEBAR NAVIGATION ====================
 def setup_sidebar():
     with st.sidebar:
         st.markdown(
             """
-            <div style="text-align:center; margin-bottom:20px; padding:16px; border-radius:10px;">
-                <div style="color: var(--accent); font-size:2.2rem;">🌊</div>
-                <h2 style="color:var(--accent); margin:0; font-weight:900;">SISTEM BANJIR</h2>
-                <p style="color:var(--muted); margin-top:6px; font-weight:600;">Peringatan Dini & Analisis</p>
+            <div class="sidebar-header">
+                <div class="sidebar-title">SISTEM BANJIR</div>
             </div>
             """,
             unsafe_allow_html=True
         )
-        st.markdown("---")
+        
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
         if 'current_page' not in st.session_state:
             st.session_state.current_page = "Home"
 
+        # Hanya 6 menu yang tersisa
         menu_items = [
-            (" Home", "Home"),
-            (" Lapor Banjir", "Lapor Banjir"),
-            (" Laporan Harian", "Laporan Harian"),
-            (" Rekapan Bulanan", "Rekapan Bulanan"),
-            (" Prediksi Real-time", "Prediksi Banjir"),
-            (" Analisis AI", "Analisis ANN"),
-            (" Analisis Statistik", "Analisis Gumbel")
+            ("Home", "Home"),
+            ("Lapor Banjir", "Lapor Banjir"),
+            ("Laporan Harian", "Laporan Harian"),
+            ("Rekapan Bulanan", "Rekapan Bulanan"),
+            ("Prediksi Real-time", "Prediksi Banjir"),
+            ("Kalkulator Banjir", "Kalkulator Banjir")
         ]
 
+        st.markdown('<div style="margin: 10px 0;">', unsafe_allow_html=True)
+        
         for text, page in menu_items:
             if st.button(text, key=f"menu_{page}", use_container_width=True,
                          type="primary" if st.session_state.current_page == page else "secondary"):
                 st.session_state.current_page = page
                 st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+        
+        st.markdown("### Kontak")
+        
+        with st.container():
+            st.markdown("**LOKASI**")
+            st.markdown("Jl. Diponegoro No. 52-58")
+            st.markdown("Salatiga, Jawa Tengah")
+            
+            st.markdown("---")
+            
+            st.markdown("**EMAIL**")
+            st.markdown("tyarawahyusaputra@gmail.com")
+            
+            st.markdown("---")
+            
+            st.markdown("**TELEPON**")
+            st.markdown("085156959561")
 
-        st.markdown("---")
-        st.markdown("### KONTAK KAMI:")
-        st.markdown(
-            """
-            <div style="background: rgba(0,174,230,0.06); padding:12px; border-radius:8px;">
-                <div class="contact-row">
-                    <div class="contact-icon" style="font-size:1.1rem;">📍</div>
-                    <div class="contact-content">
-                        <div class="contact-label">LOKASI:</div>
-                        <div class="contact-value">Jl. Diponegoro No. 52-58<br>Salatiga, Jawa Tengah</div>
-                    </div>
-                </div>
-                <div style="height:1px; background: rgba(255,255,255,0.03); margin:10px 0;"></div>
-                <div class="contact-row">
-                    <div class="contact-icon" style="font-size:1.1rem;">📧</div>
-                    <div class="contact-content">
-                        <div class="contact-label">EMAIL:</div>
-                        <div class="contact-value">tyarawahyusaputra@gmail.com</div>
-                    </div>
-                </div>
-                <div style="height:1px; background: rgba(255,255,255,0.03); margin:10px 0;"></div>
-                <div class="contact-row">
-                    <div class="contact-icon" style="font-size:1.1rem;">📞</div>
-                    <div class="contact-content">
-                        <div class="contact-label">TELEPON:</div>
-                        <div class="contact-value">085156959561</div>
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        st.markdown("---")
-
-# ==================== PAGES (structure preserved) ====================
-
-    st.markdown("### FITUR UTAMA SISTEM")
+# ==================== HOME PAGE ====================
+def show_homepage():
+    st.markdown(
+        """
+        <div class="hero-section" style="padding: 40px; margin: 30px 0; text-align: center;">
+            <h1 style="color: var(--accent) !important; margin-bottom: 30px; font-weight: 800; font-size: 3rem;">
+                SISTEM PERINGATAN DINI BANJIR
+            </h1>
+            <p style="color: #dfe9ec !important; font-size: 1.4rem; font-weight: 400; line-height: 1.6; margin-bottom: 20px;">
+                Platform monitoring dan prediksi banjir berbasis Artificial Intelligence<br>
+                dan analisis statistik untuk mendukung mitigasi bencana.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    
+    st.markdown("### Fitur Utama Sistem")
+    
     col1, col2 = st.columns(2)
+    
     with col1:
         st.markdown(
             """
             <div class="feature-card">
-                <h3> KECERDASAN BUATAN</h3>
-                <p>Neural Network canggih untuk prediksi real-time berdasarkan pola data historis dengan akurasi tinggi.</p>
-                <ul>
-                    <li>Analisis curah hujan otomatis</li>
-                    <li>Monitoring tinggi air real-time</li>
+                <h3>KECERDASAN BUATAN</h3>
+                <p>Prediksi real-time menggunakan neural network dengan analisis data historis untuk akurasi maksimal.</p>
+                <ul style="color: #dfe9ec; padding-left: 20px;">
+                    <li>Monitoring tinggi air otomatis</li>
                     <li>Prediksi risiko berbasis AI</li>
                     <li>Update data setiap 15 menit</li>
-                    <li>Peringatan dini otomatis</li>
+                    <li>Peringatan dini real-time</li>
                 </ul>
             </div>
             """,
             unsafe_allow_html=True
         )
+    
     with col2:
         st.markdown(
             """
             <div class="feature-card">
-                <h3> ANALISIS STATISTIK</h3>
+                <h3>ANALISIS STATISTIK</h3>
                 <p>Distribusi Gumbel untuk analisis nilai ekstrem dan perhitungan periode ulang banjir.</p>
-                <ul>
+                <ul style="color: #dfe9ec; padding-left: 20px;">
                     <li>Probabilitas kejadian ekstrem</li>
                     <li>Periode ulang 5-50 tahun</li>
                     <li>Risk assessment terstruktur</li>
-                    <li>Validasi statistik komprehensif</li>
                     <li>Visualisasi data interaktif</li>
                 </ul>
             </div>
             """,
             unsafe_allow_html=True
         )
-
-    st.markdown("### TEKNOLOGI PENDUKUNG")
+    
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    
+    st.markdown("### Fitur Baru: Kalkulator Banjir")
+    
     col3, col4 = st.columns(2)
+    
     with col3:
         st.markdown(
             """
             <div class="feature-card">
-                <h3> DATABASE</h3>
-                <p>SQLite dengan struktur data teroptimasi untuk penyimpanan data historis dan real-time.</p>
-                <ul>
-                    <li>Penyimpanan data laporan</li>
-                    <li>Log prediksi AI</li>
-                    <li>Backup otomatis</li>
+                <h3>INPUT FLEKSIBEL</h3>
+                <p>Masukkan parameter cuaca sesuai kondisi lokasi Anda dengan input yang mudah.</p>
+                <ul style="color: #dfe9ec; padding-left: 20px;">
+                    <li>Curah hujan (0-500 mm)</li>
+                    <li>Tinggi air (60-150 mdpl)</li>
+                    <li>Kelembapan (0-100%)</li>
+                    <li>Suhu min & max</li>
                 </ul>
             </div>
             """,
             unsafe_allow_html=True
         )
+    
     with col4:
         st.markdown(
             """
             <div class="feature-card">
-                <h3> DASHBOARD</h3>
-                <p>Interface interaktif dengan visualisasi data real-time dan kontrol yang mudah digunakan.</p>
-                <ul>
-                    <li>Chart interaktif</li>
-                    <li>Responsive design</li>
-                    <li>Multi-language support</li>
+                <h3>HASIL AKURAT</h3>
+                <p>Dapatkan prediksi risiko banjir berdasarkan kondisi spesifik di lokasi Anda.</p>
+                <ul style="color: #dfe9ec; padding-left: 20px;">
+                    <li>Status risiko jelas (RENDAH/MENENGAH/TINGGI)</li>
+                    <li>Rekomendasi tindakan spesifik</li>
+                    <li>Detail parameter lengkap</li>
+                    <li>Visualisasi risk level</li>
                 </ul>
             </div>
             """,
             unsafe_allow_html=True
         )
 
+# ==================== KALKULATOR BANJIR PAGE ====================
+def show_flood_calculator_page():
     st.markdown(
         """
-        <div class="cta-section">
-            <h3 style="color: var(--accent) !important; margin-bottom: 10px; font-weight:900;">🚀 SIAP MENGGUNAKAN SISTEM?</h3>
-            <p style="color:#dfe9ec !important; margin-bottom:6px; font-weight:700;">Pilih menu di sidebar untuk mulai menggunakan fitur lengkap sistem kami.</p>
+        <div class="prediction-header">
+            <h1 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 800;">Kalkulator Banjir</h1>
+            <p style="color: #dfe9ec !important; font-size: 1.2rem; font-weight: 400;">
+                Masukkan parameter cuaca untuk mendapatkan prediksi risiko banjir yang akurat
+            </p>
         </div>
         """,
         unsafe_allow_html=True
     )
+    
+    with st.container():
+        st.markdown("### Parameter Cuaca")
+        
+        with st.form("flood_calculator_form", clear_on_submit=False):
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("#### Curah Hujan")
+                rainfall = st.number_input(
+                    "Curah Hujan (mm)",
+                    min_value=0.0,
+                    max_value=500.0,
+                    value=100.0,
+                    step=0.01,  # Bisa input desimal
+                    format="%.2f",  # Format 2 angka di belakang koma
+                    help="Masukkan curah hujan dalam mm (0.00-500.00 mm)",
+                    key="rainfall_input"
+                )
+                st.caption(f"Nilai: {rainfall:.2f} mm")
+            
+            with col2:
+                st.markdown("#### Tinggi Air")
+                water_level = st.number_input(
+                    "Tinggi Air (mdpl)",
+                    min_value=60.0,
+                    max_value=150.0,
+                    value=100.0,
+                    step=0.01,  # Bisa input desimal
+                    format="%.2f",  # Format 2 angka di belakang koma
+                    help="Masukkan tinggi air dalam mdpl (60.00-150.00 mdpl)",
+                    key="water_input"
+                )
+                st.caption(f"Nilai: {water_level:.2f} mdpl")
+            
+            st.markdown("---")
+            
+            col3, col4 = st.columns(2)
+            
+            with col3:
+                st.markdown("#### Kelembapan")
+                humidity = st.number_input(
+                    "Kelembapan (%)",
+                    min_value=0.0,
+                    max_value=100.0,
+                    value=70.0,
+                    step=0.01,  # Bisa input desimal
+                    format="%.2f",  # Format 2 angka di belakang koma
+                    help="Masukkan kelembapan dalam persen (0.00-100.00%)",
+                    key="humidity_input"
+                )
+                st.caption(f"Nilai: {humidity:.2f}%")
+            
+            with col4:
+                st.markdown("#### Suhu Harian")
+                
+                temp_col1, temp_col2 = st.columns(2)
+                
+                with temp_col1:
+                    temp_min = st.number_input(
+                        "Suhu Min (°C)",
+                        min_value=-50.0,  # Bisa negatif sampai -50°C
+                        max_value=50.0,
+                        value=24.0,
+                        step=0.1,  # Bisa input desimal
+                        format="%.1f",  # Format 1 angka di belakang koma
+                        help="Suhu minimum harian (-50.0 sampai 50.0°C)",
+                        key="temp_min_input"
+                    )
+                
+                with temp_col2:
+                    temp_max = st.number_input(
+                        "Suhu Max (°C)",
+                        min_value=-50.0,  # Bisa negatif sampai -50°C
+                        max_value=50.0,
+                        value=32.0,
+                        step=0.1,  # Bisa input desimal
+                        format="%.1f",  # Format 1 angka di belakang koma
+                        help="Suhu maksimum harian (-50.0 sampai 50.0°C)",
+                        key="temp_max_input"
+                    )
+                
+                if temp_max < temp_min:
+                    st.error("⚠️ Suhu maksimum harus lebih besar atau sama dengan suhu minimum")
+                    # Otomatis sesuaikan jika user memasukkan nilai yang salah
+                    temp_max = temp_min
+                
+                temp_avg = (temp_min + temp_max) / 2
+                st.caption(f"Rentang: {temp_min:.1f}°C – {temp_max:.1f}°C | Rata-rata: {temp_avg:.1f}°C")
+            
+            st.markdown("---")
+            
+            # Informasi tentang input desimal dan suhu negatif
+            with st.expander("ℹ️ Panduan Input", expanded=False):
+                st.markdown("""
+                **Panduan Pengisian:**
+                
+                **1. Curah Hujan (mm):**
+                - Nilai: 0.00 - 500.00 mm
+                - Contoh: 125.50 mm, 75.25 mm
+                - Format: bisa 2 angka di belakang koma
+                
+                **2. Tinggi Air (mdpl):**
+                - Nilai: 60.00 - 150.00 mdpl
+                - Contoh: 123.75 mdpl, 98.50 mdpl
+                - Format: bisa 2 angka di belakang koma
+                
+                **3. Kelembapan (%):**
+                - Nilai: 0.00 - 100.00%
+                - Contoh: 85.50%, 72.25%
+                - Format: bisa 2 angka di belakang koma
+                
+                **4. Suhu (°C):**
+                - Min: -50.0°C sampai 50.0°C
+                - Max: -50.0°C sampai 50.0°C
+                - Contoh: -5.0°C, 0.0°C, 25.5°C
+                - Format: bisa 1 angka di belakang koma
+                - Catatan: Suhu maksimal harus ≥ suhu minimal
+                """)
+            
+            submit_col1, submit_col2, submit_col3 = st.columns([1, 2, 1])
+            with submit_col2:
+                submitted = st.form_submit_button(
+                    "PREDIKSI SEKARANG",
+                    use_container_width=True,
+                    type="primary"
+                )
+    
+    if submitted:
+        with st.spinner("Menganalisis data..."):
+            time.sleep(0.8)
+            
+            try:
+                # Konversi ke float untuk memastikan tipe data benar
+                rainfall_float = float(rainfall)
+                water_level_float = float(water_level)
+                humidity_float = float(humidity)
+                temp_min_float = float(temp_min)
+                temp_max_float = float(temp_max)
+                
+                result = predict_flood_ann_with_temp_range(
+                    rainfall=rainfall_float,
+                    water_level=water_level_float,
+                    humidity=humidity_float,
+                    temp_min=temp_min_float,
+                    temp_max=temp_max_float
+                )
+                
+                show_calculator_result(
+                    result, 
+                    rainfall_float, 
+                    water_level_float, 
+                    humidity_float, 
+                    temp_min_float, 
+                    temp_max_float
+                )
+                
+            except Exception as e:
+                st.error(f"Error dalam prediksi: {str(e)}")
+                
+                # Fallback prediction jika ada error
+                temp_avg = (float(temp_min) + float(temp_max)) / 2
+                simple_risk = min(1.0, (float(rainfall) / 300) * 0.6 + (float(water_level) / 150) * 0.25 + (float(humidity) / 100) * 0.15)
+                
+                if simple_risk >= 0.7:
+                    status = "TINGGI"
+                    message = "WASPADA! Potensi banjir tinggi"
+                elif simple_risk >= 0.4:
+                    status = "MENENGAH"
+                    message = "SIAGA! Pantau perkembangan"
+                else:
+                    status = "RENDAH"
+                    message = "AMAN, tetap waspada"
+                
+                simple_result = {
+                    'risk_level': round(simple_risk, 3),
+                    'status': status,
+                    'message': message,
+                    'temperature_range': {'min': float(temp_min), 'max': float(temp_max), 'average': temp_avg}
+                }
+                
+                show_calculator_result(
+                    simple_result, 
+                    float(rainfall), 
+                    float(water_level), 
+                    float(humidity), 
+                    float(temp_min), 
+                    float(temp_max)
+                )
 
+def show_calculator_result(result, rainfall, water_level, humidity, temp_min, temp_max):
+    """Tampilkan hasil kalkulator - PAKAI STREAMLIT MURNI"""
+    
+    st.markdown("---")
+    st.markdown("### HASIL PREDIKSI")
+    st.caption("Berdasarkan parameter yang dimasukkan")
+    
+    status_colors = {
+        'RENDAH': '#10b981',
+        'MENENGAH': '#f59e0b',
+        'TINGGI': '#ef4444',
+        'ERROR': '#6b7280'
+    }
+    
+    risk_color = status_colors.get(result['status'], '#6b7280')
+    risk_level = result.get('risk_level', 0.0)
+    risk_level = max(0.0, min(1.0, risk_level))
+    
+    # ============== GANTI DENGAN STREAMLIT MURNI ==============
+    
+    # Header status dengan warna
+    st.markdown(f"""
+    <h1 style="color: {risk_color}; text-align: center; margin: 20px 0; font-size: 2.5rem;">
+        {result['status']}
+    </h1>
+    """, unsafe_allow_html=True)
+    
+    # Risk level
+    st.markdown(f"""
+    <div style="text-align: center; font-size: 1.2rem; color: #dfe9ec; margin-bottom: 20px;">
+        Risk Level: <strong>{risk_level:.3f}</strong>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Message box
+    with st.container():
+        st.markdown(f"""
+        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 15px; margin: 20px 0;">
+            <p style="color: #dfe9ec; margin: 0; font-size: 1.1rem; font-weight: 500; text-align: center;">
+                {result.get('message', 'Prediksi risiko banjir')}
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Progress bar dengan Streamlit native
+    st.markdown("**Tingkat Risiko:**")
+    progress_col1, progress_col2 = st.columns([4, 1])
+    with progress_col1:
+        st.progress(float(risk_level))
+    with progress_col2:
+        st.markdown(f"**{risk_level:.1%}**")
+    
+    # Labels untuk progress bar
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 0.9rem;'>RENDAH<br>(0.0-0.5)</p>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 0.9rem;'>MENENGAH<br>(0.5-0.8)</p>", unsafe_allow_html=True)
+    with col3:
+        st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 0.9rem;'>TINGGI<br>(0.8-1.0)</p>", unsafe_allow_html=True)
+    
+    # ============== DETAIL PARAMETER ==============
+    with st.expander("📊 Detail Parameter Input", expanded=False):
+        st.markdown("### 📈 Parameter yang Dimasukkan")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("🌧️ Curah Hujan", f"{rainfall} mm")
+            if rainfall > 200:
+                st.error(">200 mm: HUJAN SANGAT LEBAT")
+            elif rainfall > 100:
+                st.warning("100-200 mm: HUJAN LEBAT")
+            else:
+                st.success("<100 mm: HUJAN NORMAL")
+        
+        with col2:
+            st.metric("💧 Tinggi Air", f"{water_level} mdpl")
+            if water_level > 130:
+                st.error(">130 mdpl: TINGGI")
+            elif water_level > 110:
+                st.warning("110-130 mdpl: MENENGAH")
+            else:
+                st.success("<110 mdpl: NORMAL")
+        
+        with col3:
+            st.metric("💨 Kelembapan", f"{humidity}%")
+            if humidity > 80:
+                st.warning(">80%: SANGAT LEMBAP")
+            elif humidity > 60:
+                st.info("60-80%: LEMBAP")
+            else:
+                st.success("<60%: NORMAL")
+        
+        with col4:
+            temp_avg = (temp_min + temp_max) / 2
+            st.metric("🌡️ Suhu Rata-rata", f"{temp_avg:.1f}°C")
+            st.caption(f"Min: {temp_min}°C | Max: {temp_max}°C")
+            if temp_avg > 30:
+                st.error(">30°C: PANAS")
+            elif temp_avg > 25:
+                st.warning("25-30°C: HANGAT")
+            else:
+                st.success("<25°C: NORMAL")
+    
+    st.markdown("---")
+    if st.button("🔄 Uji Parameter Lain", use_container_width=True, type="secondary"):
+        st.rerun()
 
+# ==================== PAGE HANDLERS LAINNYA ====================
 def show_flood_report_page():
     st.markdown(
         """
-        <div class="hero-section" style="padding: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 10px; font-weight: 900;">📝 FORM LAPORAN BANJIR</h2>
-            <p style="color: #dfe9ec !important; font-size:1.05rem; font-weight:700;">Laporkan kejadian banjir di sekitar Anda untuk membantu sistem peringatan dini.</p>
+        <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Form Laporan Banjir</h2>
+            <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
+                Laporkan kejadian banjir di sekitar Anda untuk membantu sistem peringatan dini.
+            </p>
         </div>
         """,
         unsafe_allow_html=True
     )
     show_flood_report_form(flood_controller)
 
-
 def show_current_month_reports_page():
     st.markdown(
         """
-        <div class="hero-section" style="padding: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 10px; font-weight: 900;">📊 LAPORAN HARIAN</h2>
-            <p style="color: #dfe9ec !important; font-size:1.05rem; font-weight:700;">Data laporan banjir real-time dari masyarakat.</p>
+        <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Laporan Harian</h2>
+            <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
+                Data laporan banjir real-time dari masyarakat.
+            </p>
         </div>
         """,
         unsafe_allow_html=True
     )
     show_current_month_reports(flood_controller)
 
-
 def show_monthly_reports_page():
     st.markdown(
         """
-        <div class="hero-section" style="padding: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 10px; font-weight: 900;">📈 REKAPAN BULANAN</h2>
-            <p style="color: #dfe9ec !important; font-size:1.05rem; font-weight:700;">Analisis dan statistik laporan banjir bulan ini.</p>
+        <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Rekapan Bulanan</h2>
+            <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
+                Analisis dan statistik laporan banjir bulan ini.
+            </p>
         </div>
         """,
         unsafe_allow_html=True
     )
     show_monthly_reports_summary(flood_controller)
 
-
 def show_prediction_page():
     st.markdown(
         """
-        <div class="hero-section" style="padding: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 10px; font-weight: 900;"> PREDIKSI REAL-TIME</h2>
-            <p style="color: #dfe9ec !important; font-size:1.05rem; font-weight:700;">Monitoring dan prediksi banjir berdasarkan data BBWS Bengawan Solo.</p>
+        <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Prediksi Real-time</h2>
+            <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
+                Monitoring dan prediksi banjir berdasarkan data BBWS Bengawan Solo.
+            </p>
         </div>
         """,
         unsafe_allow_html=True
     )
     show_prediction_dashboard(realtime_controller)
 
-
-def show_ai_analysis_page():
-    st.markdown(
-        """
-        <div class="hero-section" style="padding: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 10px; font-weight: 900;"> ANALISIS NEURAL NETWORK</h2>
-            <p style="color: #dfe9ec !important; font-size:1.05rem; font-weight:700;">Prediksi risiko banjir menggunakan Artificial Intelligence.</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    show_ai_analysis()
-
-
-def show_gumbel_analysis_page():
-    st.markdown(
-        """
-        <div class="hero-section" style="padding: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 10px; font-weight: 900;"> ANALISIS DISTRIBUSI GUMBEL</h2>
-            <p style="color: #dfe9ec !important; font-size:1.05rem; font-weight:700;">Analisis statistik untuk prediksi kejadian ekstrem.</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    show_statistical_analysis()
-
 # ==================== MAIN APP ====================
-
 def main():
     setup_sidebar()
 
+    # Hanya 6 page handlers yang tersisa
     page_handlers = {
         "Home": show_homepage,
         "Lapor Banjir": show_flood_report_page,
         "Laporan Harian": show_current_month_reports_page,
         "Rekapan Bulanan": show_monthly_reports_page,
         "Prediksi Banjir": show_prediction_page,
-        "Analisis ANN": show_ai_analysis_page,
-        "Analisis Gumbel": show_gumbel_analysis_page,
+        "Kalkulator Banjir": show_flood_calculator_page
     }
 
     handler = page_handlers.get(st.session_state.current_page, show_homepage)
