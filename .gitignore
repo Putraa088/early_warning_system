@@ -1,25 +1,23 @@
+# Database
+flood_system.db
+flood_system.db.backup
+
+# Uploads
+uploads/
+data_harian/
+data_bulanan/
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-venv/
 env/
+venv/
 .venv/
-ENV/
-
-# Database
-flood_system.db
-*.db
-*.sqlite3
-
-# Uploads - EXCLUDE isi folder tapi BUKAN folder-nya
-uploads/*
-!uploads/.gitkeep
-
-# Streamlit
-.streamlit/
+env.bak/
+venv.bak/
 
 # IDE
 .vscode/
@@ -30,3 +28,6 @@ uploads/*
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
