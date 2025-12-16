@@ -34,75 +34,81 @@ class FloodReportController:
             print(f"⚠️ Error in check_daily_limit: {e}")
             return True
 
-    def submit_report(self, address, flood_height, reporter_name, reporter_phone=None, photo_file=None):
-        """Submit new flood report - HANYA ke TAB 1 dengan waktu WIB"""
-        photo_path = None
-        photo_url = None
+def submit_report(self, address, flood_height, reporter_name, reporter_phone=None, photo_file=None):
+    """Submit new flood report"""
+    photo_path = None
+    photo_url = None
+    
+    try:
+        # Get client IP
+        client_ip = self.get_client_ip()
         
-        try:
-            # Get client IP
-            client_ip = self.get_client_ip()
-            
-            # Check daily limit - TANPA PERUBAHAN
-            if not self.check_daily_limit(client_ip):
-                return False, "❌ Anda telah mencapai batas maksimal 10 laporan per hari."
-            
-            # Handle photo upload - TANPA PERUBAHAN
-            if photo_file is not None:
+        # Check daily limit
+        if not self.check_daily_limit(client_ip):
+            return False, "❌ Anda telah mencapai batas maksimal 10 laporan per hari."
+        
+        # Handle photo upload
+        if photo_file is not None:
+            try:
+                file_extension = photo_file.name.split('.')[-1].lower()
+                filename = f"{uuid.uuid4()}.{file_extension}"
+                photo_path = os.path.join(self.upload_folder, filename)
+                
+                with open(photo_path, "wb") as f:
+                    f.write(photo_file.getbuffer())
+                
+                photo_url = f"uploads/{filename}"
+                
+            except Exception as e:
+                print(f"❌ Error saving photo: {e}")
+        
+        # Create report in SQLite database
+        report_id = self.flood_model.create_report(
+            address=address,
+            flood_height=flood_height,
+            reporter_name=reporter_name,
+            reporter_phone=reporter_phone,
+            photo_path=photo_path,
+            ip_address=client_ip
+        )
+        
+        # DEBUG: Print untuk melihat apa yang terjadi
+        print(f"DEBUG: report_id = {report_id}")
+        print(f"DEBUG: address = {address}")
+        print(f"DEBUG: flood_height = {flood_height}")
+        print(f"DEBUG: photo_path = {photo_path}")
+        print(f"DEBUG: ip_address = {client_ip}")
+        
+        if report_id:
+            # SIMPAN KE GOOGLE SHEETS
+            if self.sheets_model and self.sheets_model.client:
                 try:
-                    file_extension = photo_file.name.split('.')[-1].lower()
-                    filename = f"{uuid.uuid4()}.{file_extension}"
-                    photo_path = os.path.join(self.upload_folder, filename)
+                    sheets_data = {
+                        'address': address,
+                        'flood_height': flood_height,
+                        'reporter_name': reporter_name,
+                        'reporter_phone': reporter_phone or '',
+                        'ip_address': client_ip,
+                        'photo_url': photo_url or ''
+                    }
                     
-                    with open(photo_path, "wb") as f:
-                        f.write(photo_file.getbuffer())
-                    
-                    photo_url = f"uploads/{filename}"
-                    
+                    success = self.sheets_model.save_flood_report(sheets_data)
+                    if success:
+                        print("✅ Report saved to Google Sheets")
                 except Exception as e:
-                    print(f"❌ Error saving photo: {e}")
+                    print(f"⚠️ Error saving to Google Sheets: {e}")
             
-            # Create report in SQLite database - AKAN OTOMATIS PAKAI WIB
-            report_id = self.flood_model.create_report(
-                address=address,
-                flood_height=flood_height,
-                reporter_name=reporter_name,
-                reporter_phone=reporter_phone,
-                photo_path=photo_path,
-                ip_address=client_ip
-            )
-            
-            if report_id:
-                # ========== SIMPAN KE GOOGLE SHEETS TAB 1 DENGAN WIB ==========
-                if self.sheets_model and self.sheets_model.client:
-                    try:
-                        sheets_data = {
-                            'address': address,
-                            'flood_height': flood_height,
-                            'reporter_name': reporter_name,
-                            'reporter_phone': reporter_phone or '',
-                            'ip_address': client_ip,
-                            'photo_url': photo_url or ''
-                        }
-                        
-                        success = self.sheets_model.save_flood_report(sheets_data)
-                        if success:
-                            print("✅ Report saved to Google Sheets dengan waktu WIB")
-                    except Exception as e:
-                        print(f"⚠️ Error saving to Google Sheets: {e}")
-                # ===================================================
-                
-                return True, "✅ Laporan berhasil dikirim!"
-            else:
-                if photo_path and os.path.exists(photo_path):
-                    os.remove(photo_path)
-                return False, "❌ Gagal menyimpan laporan"
-                
-        except Exception as e:
-            print(f"❌ Error in submit_report: {e}")
+            return True, "✅ Laporan berhasil dikirim!"
+        else:
             if photo_path and os.path.exists(photo_path):
                 os.remove(photo_path)
-            return False, f"❌ Error: {str(e)}"
+            return False, "❌ Gagal menyimpan laporan"  # <-- INI YANG MUNCUL
+            
+    except Exception as e:
+        print(f"❌ Error in submit_report: {e}")
+        if photo_path and os.path.exists(photo_path):
+            os.remove(photo_path)
+        return False, f"❌ Error: {str(e)}"
     
     # ============ FUNGSI UNTUK VIEWS - TANPA PERUBAHAN ============
     
@@ -131,3 +137,4 @@ class FloodReportController:
             return st.session_state.user_ip
         except:
             return "user_local_test"
+
