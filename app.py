@@ -453,58 +453,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown(
-    """
-    <div class="feature-card" style="margin-top: 20px;">
-        <h3>ANALISIS STATISTIK</h3>
-        <p>Distribusi Gumbel untuk analisis nilai ekstrem dan perhitungan periode ulang banjir.</p>
-        <ul style="color: #dfe9ec; padding-left: 20px;">
-            <li>Probabilitas kejadian ekstrem</li>
-            <li>Periode ulang 5-50 tahun</li>
-            <li>Risk assessment terstruktur</li>
-            <li>Visualisasi data interaktif</li>
-        </ul>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-
-st.markdown("### Fitur Baru: Kalkulator Banjir")
-
-st.markdown(
-    """
-    <div class="feature-card">
-        <h3>INPUT FLEKSIBEL</h3>
-        <p>Masukkan parameter cuaca sesuai kondisi lokasi Anda dengan input yang mudah.</p>
-        <ul style="color: #dfe9ec; padding-left: 20px;">
-            <li>Curah hujan (0-500 mm)</li>
-            <li>Tinggi air (60-150 mdpl)</li>
-            <li>Kelembapan (0-100%)</li>
-            <li>Suhu min & max</li>
-        </ul>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    """
-    <div class="feature-card" style="margin-top: 20px;">
-        <h3>HASIL AKURAT</h3>
-        <p>Dapatkan prediksi risiko banjir berdasarkan kondisi spesifik di lokasi Anda.</p>
-        <ul style="color: #dfe9ec; padding-left: 20px;">
-            <li>Status risiko jelas (RENDAH/MENENGAH/TINGGI)</li>
-            <li>Rekomendasi tindakan spesifik</li>
-            <li>Detail parameter lengkap</li>
-            <li>Visualisasi risk level</li>
-        </ul>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
 # ==================== KALKULATOR BANJIR PAGE ====================
 def show_flood_calculator_page():
     st.markdown(
@@ -881,4 +829,5 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
+
 
