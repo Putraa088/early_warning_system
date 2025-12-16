@@ -43,40 +43,25 @@ try:
     print("✅ Semua controllers berhasil di-import")
 except Exception as e:
     st.error(f"Import Error Controller: {e}")
-
+    
+    # Fallback tanpa Google Sheets
     class VisitorController:
-        def track_visit(self, page):
-            return None
-        def get_visitor_stats(self):
-            return {}
-
+        def track_visit(self, page): return None
+        def get_visitor_stats(self): return {}
+    
     class FloodReportController:
         def submit_report(self, *args, **kwargs):
-            return False, "Fallback"
-        def get_today_reports(self):
-            return []
-        def get_month_reports(self):
-            return []
-        def get_all_reports(self):
-            return []
-        def get_monthly_statistics(self):
-            return {}
-        def get_client_ip(self):
-            return "127.0.0.1"
-        def save_prediction_to_sheets(self, *args, **kwargs):
-            return False
-        def update_monthly_statistics(self):
-            return False
-        def get_google_sheets_stats(self):
-            return {}
-
+            return False, "Sistem offline - Google Sheets tidak terhubung"
+        def get_today_reports(self): return []
+        def get_month_reports(self): return []
+        def get_all_reports(self): return []
+        def get_monthly_statistics(self): return {}
+        def get_client_ip(self): return "127.0.0.1"
+    
     class RealTimeDataController:
-        def get_comprehensive_data(self):
-            return []
-        def get_overall_risk_status(self, p):
-            return "RENDAH", "green"
-        def is_same_location(self, l1, l2):
-            return True
+        def get_comprehensive_data(self): return []
+        def get_overall_risk_status(self, p): return "RENDAH", "green"
+        def is_same_location(self, l1, l2): return True
 
 # ==================== IMPORT MODEL PREDICTION ====================
 try:
@@ -110,7 +95,7 @@ try:
     from views.flood_reports_table import show_current_month_reports
     from views.monthly_reports import show_monthly_reports_summary
     from views.prediction_dashboard import show_prediction_dashboard
-    from views.admin_dashboard import show_admin_dashboard
+    # Menghapus import untuk AI dan Statistical analysis
 except Exception as e:
     st.error(f"Import Error Views: {e}")
 
@@ -125,9 +110,6 @@ except Exception as e:
 
     def show_prediction_dashboard(*args, **kwargs):
         st.info("Prediction dashboard not available")
-    
-    def show_admin_dashboard(*args, **kwargs):
-        st.info("Admin dashboard not available")
 
 # ==================== CSS THEME ====================
 CSS_THEME = r"""
@@ -376,21 +358,18 @@ def setup_sidebar():
             ("Laporan Harian", "Laporan Harian"),
             ("Rekapan Bulanan", "Rekapan Bulanan"),
             ("Prediksi Real-time", "Prediksi Banjir"),
-            ("Kalkulator Banjir", "Kalkulator Banjir"),
-            ("Admin Dashboard", "Admin Dashboard")
+            ("Kalkulator Banjir", "Kalkulator Banjir")
         ]
 
         st.markdown('<div style="margin: 10px 0;">', unsafe_allow_html=True)
         
         for text, page in menu_items:
             if st.button(text, key=f"menu_{page}", use_container_width=True,
-                         type="primary" if st.session_state.current_page == page else "secondary"):
+                        type="primary" if st.session_state.current_page == page else "secondary"):
                 st.session_state.current_page = page
                 st.rerun()
         
         st.markdown('</div>', unsafe_allow_html=True)
-        
-        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
         
         st.markdown("### Kontak")
         
@@ -617,58 +596,36 @@ def show_flood_calculator_page():
                     type="primary"
                 )
     
-    # ========== PREDIKSI SETELAH FORM SUBMIT ==========
+    # ========== PREDIKSI TANPA GOOGLE SHEETS ==========
     if submitted:
         with st.spinner("Menganalisis data..."):
             time.sleep(0.8)
             
             try:
-                # Konversi ke float di DALAM block ini
-                rainfall_float = float(rainfall)
-                water_level_float = float(water_level)
-                humidity_float = float(humidity)
-                temp_min_float = float(temp_min)
-                temp_max_float = float(temp_max)
+                # Konversi ke float
+                rainfall_val = float(rainfall)
+                water_level_val = float(water_level)
+                humidity_val = float(humidity)
+                temp_min_val = float(temp_min)
+                temp_max_val = float(temp_max)
                 
+                # Dapatkan prediksi
                 result = predict_flood_ann_with_temp_range(
-                    rainfall=rainfall_float,
-                    water_level=water_level_float,
-                    humidity=humidity_float,
-                    temp_min=temp_min_float,
-                    temp_max=temp_max_float
+                    rainfall=rainfall_val,
+                    water_level=water_level_val,
+                    humidity=humidity_val,
+                    temp_min=temp_min_val,
+                    temp_max=temp_max_val
                 )
                 
-                # ========== SIMPAN PREDIKSI KE GOOGLE SHEETS ==========
-                try:
-                    if hasattr(flood_controller, 'save_prediction_to_sheets'):
-                        prediction_data = {
-                            'location': 'Kalkulator',
-                            'rainfall': rainfall_float,
-                            'water_level': water_level_float,
-                            'humidity': humidity_float,
-                            'temp_min': temp_min_float,
-                            'temp_max': temp_max_float,
-                            'risk_level': result['risk_level'],
-                            'status': result['status'],
-                            'message': result.get('message', 'Prediksi risiko banjir')
-                        }
-                        
-                        success = flood_controller.save_prediction_to_sheets(prediction_data)
-                        if success:
-                            st.success("✅ Prediksi tersimpan di Google Sheets!")
-                        else:
-                            st.info("ℹ️ Prediksi disimpan lokal (Google Sheets offline)")
-                except Exception as e:
-                    print(f"⚠️ Error saving prediction to Google Sheets: {e}")
-                # ========== END GOOGLE SHEETS ==========
-                
-                show_calculator_result(result, rainfall_float, water_level_float, 
-                                      humidity_float, temp_min_float, temp_max_float)
+                # TAMPILKAN HASIL DI WEBSITE
+                show_calculator_result(result, rainfall_val, water_level_val, 
+                                    humidity_val, temp_min_val, temp_max_val)
                 
             except Exception as e:
                 st.error(f"Error dalam prediksi: {str(e)}")
                 
-                # Fallback prediction tanpa Google Sheets
+                # Fallback prediction sederhana
                 temp_avg = (float(temp_min) + float(temp_max)) / 2
                 simple_risk = min(1.0, (float(rainfall) / 300) * 0.6 + (float(water_level) / 150) * 0.25 + (float(humidity) / 100) * 0.15)
                 
@@ -690,28 +647,25 @@ def show_flood_calculator_page():
                 }
                 
                 show_calculator_result(simple_result, float(rainfall), float(water_level), 
-                                      float(humidity), float(temp_min), float(temp_max))
+                                    float(humidity), float(temp_min), float(temp_max))
 
 def show_calculator_result(result, rainfall, water_level, humidity, temp_min, temp_max):
-    """Tampilkan hasil kalkulator"""
+    """Tampilkan hasil kalkulator di website"""
     
     st.markdown("---")
-    
     st.markdown("### HASIL PREDIKSI")
     st.caption("Berdasarkan parameter yang dimasukkan")
     
     status_colors = {
         'RENDAH': '#10b981',
         'MENENGAH': '#f59e0b',
-        'TINGGI': '#ef4444',
-        'ERROR': '#6b7280'
+        'TINGGI': '#ef4444'
     }
     
     risk_color = status_colors.get(result['status'], '#6b7280')
     risk_level = result.get('risk_level', 0.0)
-    risk_level = max(0.0, min(1.0, risk_level))
     
-    # Header status dengan warna
+    # Header status
     st.markdown(f"""
     <h1 style="color: {risk_color}; text-align: center; margin: 20px 0; font-size: 2.5rem;">
         {result['status']}
@@ -735,7 +689,7 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
         </div>
         """, unsafe_allow_html=True)
     
-    # Progress bar dengan Streamlit native
+    # Progress bar
     st.markdown("**Tingkat Risiko:**")
     progress_col1, progress_col2 = st.columns([4, 1])
     with progress_col1:
@@ -743,7 +697,7 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
     with progress_col2:
         st.markdown(f"**{risk_level:.1%}**")
     
-    # Labels untuk progress bar
+    # Labels
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 0.9rem;'>RENDAH<br>(0.0-0.5)</p>", unsafe_allow_html=True)
@@ -752,51 +706,44 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
     with col3:
         st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 0.9rem;'>TINGGI<br>(0.8-1.0)</p>", unsafe_allow_html=True)
     
-    # Rekomendasi Tindakan
-    st.markdown("### 📋 Rekomendasi Tindakan")
+    # Rekomendasi
+    st.markdown("###  Rekomendasi Tindakan")
     
     recommendations = {
         'RENDAH': [
-            "✅ **Kondisi Aman**: Tetap waspada terhadap perubahan cuaca",
-            "📱 Simpan nomor darurat: 085156959561",
-            "📡 Pantau update cuaca dan peringatan dari pihak berwenang",
-            "💧 Pastikan saluran air di sekitar rumah dalam kondisi lancar",
-            "📸 Laporkan jika melihat genangan air yang mengkhawatirkan",
-            "📝 Siapkan dokumen penting di tempat yang aman"
+            " **Kondisi Aman**: Tetap waspada terhadap perubahan cuaca",
+            " Simpan nomor darurat: 085156959561",
+            " Pantau update cuaca dan peringatan dari pihak berwenang",
+            " Pastikan saluran air di sekitar rumah dalam kondisi lancar",
+            " Laporkan jika melihat genangan air yang mengkhawatirkan"
         ],
         'MENENGAH': [
-            "⚠️ **Status Siaga**: Tingkatkan kewaspadaan",
-            "🎒 Siapkan tas darurat berisi dokumen penting, obat-obatan, dan kebutuhan dasar",
-            "🚗 Pastikan kendaraan dalam kondisi siap dan bensin terisi",
-            "📍 Hindari area rendah dan tepi sungai",
-            "📞 Hubungi pihak berwenang jika melihat tanda-tanda banjir",
-            "🔌 Matikan peralatan listrik di bagian bawah rumah",
-            "🏠 Cek kondisi rumah dan sekitarnya"
+            " **Status Siaga**: Tingkatkan kewaspadaan",
+            " Siapkan tas darurat berisi dokumen penting dan obat-obatan",
+            " Pastikan kendaraan dalam kondisi siap",
+            " Hindari area rendah dan tepi sungai",
+            " Hubungi pihak berwenang jika melihat tanda-tanda banjir"
         ],
         'TINGGI': [
-            "🚨 **Status Bahaya**: Segera lakukan tindakan!",
-            "⬆️ SEGERA EVAKUASI ke tempat yang lebih tinggi",
-            "🔌 Matikan listrik dan gas di rumah sebelum meninggalkan",
-            "📞 Hubungi nomor darurat: 085156959561",
-            "🚫 JANGAN berjalan di arus banjir atau menyebrangi aliran air",
-            "👥 Evakuasi ke tempat yang lebih tinggi dan aman",
-            "📢 Ikuti instruksi dari petugas berwenang",
-            "⛔ Jangan kembali ke rumah sebelum dinyatakan aman",
-            "🏃‍♂️ Bawa tas darurat dan dokumen penting"
+            " **Status Bahaya**: Segera lakukan tindakan!",
+            " SEGERA EVAKUASI ke tempat yang lebih tinggi",
+            " Matikan listrik dan gas di rumah",
+            " Hubungi nomor darurat: 085156959561",
+            " JANGAN berjalan di arus banjir"
         ]
     }
     
     for rec in recommendations.get(result['status'], []):
         st.markdown(f"- {rec}")
     
-    # Detail Parameter Input
-    with st.expander("📊 Detail Parameter Input", expanded=False):
-        st.markdown("### 📈 Parameter yang Dimasukkan")
+    # Detail Parameter
+    with st.expander(" Detail Parameter Input", expanded=False):
+        st.markdown("###  Parameter yang Dimasukkan")
         
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.metric("🌧️ Curah Hujan", f"{rainfall:.2f} mm")
+            st.metric(" Curah Hujan", f"{rainfall:.2f} mm")
             if rainfall > 200:
                 st.error(">200 mm: HUJAN SANGAT LEBAT")
             elif rainfall > 100:
@@ -814,7 +761,7 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
                 st.success("<110 mdpl: NORMAL")
         
         with col3:
-            st.metric("💨 Kelembapan", f"{humidity:.2f}%")
+            st.metric(" Kelembapan", f"{humidity:.2f}%")
             if humidity > 80:
                 st.warning(">80%: SANGAT LEMBAP")
             elif humidity > 60:
@@ -824,7 +771,7 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
         
         with col4:
             temp_avg = (temp_min + temp_max) / 2
-            st.metric("🌡️ Suhu Rata-rata", f"{temp_avg:.1f}°C")
+            st.metric(" Suhu Rata-rata", f"{temp_avg:.1f}°C")
             st.caption(f"Min: {temp_min:.1f}°C | Max: {temp_max:.1f}°C")
             if temp_avg > 30:
                 st.error(">30°C: PANAS")
@@ -894,20 +841,6 @@ def show_prediction_page():
     )
     show_prediction_dashboard(realtime_controller)
 
-def show_admin_dashboard_page():
-    st.markdown(
-        """
-        <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Admin Dashboard</h2>
-            <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
-                Monitor data dan statistik sistem peringatan dini banjir.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    show_admin_dashboard(flood_controller)
-
 # ==================== MAIN APP ====================
 def main():
     setup_sidebar()
@@ -918,8 +851,7 @@ def main():
         "Laporan Harian": show_current_month_reports_page,
         "Rekapan Bulanan": show_monthly_reports_page,
         "Prediksi Banjir": show_prediction_page,
-        "Kalkulator Banjir": show_flood_calculator_page,
-        "Admin Dashboard": show_admin_dashboard_page
+        "Kalkulator Banjir": show_flood_calculator_page
     }
 
     handler = page_handlers.get(st.session_state.current_page, show_homepage)
