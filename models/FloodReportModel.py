@@ -13,11 +13,11 @@ class FloodReportModel:
         return sqlite3.connect(self.db_path)
     
     def init_database(self):
-        """Initialize database tables"""
+        """Initialize database tables - PERBAIKAN: Hapus index creation"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
-            # Create flood_reports table
+            # Create flood_reports table saja
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS flood_reports (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,13 +32,13 @@ class FloodReportModel:
                 )
             ''')
             
-            # Create indexes for better performance
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_timestamp ON flood_reports(timestamp)
-            ''')
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_ip ON flood_reports(ip_address)
-            ''')
+            # HAPUS pembuatan index untuk menghindari error
+            # cursor.execute('''
+            #     CREATE INDEX IF NOT EXISTS idx_timestamp ON flood_reports(timestamp)
+            # ''')
+            # cursor.execute('''
+            #     CREATE INDEX IF NOT EXISTS idx_ip ON flood_reports(ip_address)
+            # ''')
             
             conn.commit()
     
@@ -162,22 +162,11 @@ class FloodReportModel:
                 ''', (year_month,))
                 avg_flood_height = cursor.fetchone()[0] or 0
                 
-                # Reports per day
-                cursor.execute('''
-                    SELECT date(timestamp) as report_date, COUNT(*) as count
-                    FROM flood_reports 
-                    WHERE strftime('%Y-%m', timestamp) = ?
-                    GROUP BY date(timestamp)
-                    ORDER BY report_date
-                ''', (year_month,))
-                daily_counts = cursor.fetchall()
-                
                 return {
                     'total_reports': total_reports,
                     'avg_flood_height': round(avg_flood_height, 2),
-                    'daily_counts': daily_counts,
                     'month': year_month
                 }
         except Exception as e:
             print(f"❌ Error getting monthly statistics: {e}")
-            return {'total_reports': 0, 'avg_flood_height': 0, 'daily_counts': [], 'month': year_month}
+            return {'total_reports': 0, 'avg_flood_height': 0, 'month': year_month}
