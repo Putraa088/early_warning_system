@@ -437,13 +437,14 @@ def show_homepage():
     
     st.markdown("### Tentang Sistem")
     
-    col1 = st.columns(2)
+    col1, col2 = st.columns(2)
     
     with col1:
         st.markdown(
             """
             <div class="feature-card">
-                <p>Sistem ini membantu mamantau kondisi cuaca dan ketinggian air untuk membarikan informasi awal mengenai potensi banjir.</p>
+                <h3>KECERDASAN BUATAN</h3>
+                <p>Prediksi real-time menggunakan neural network dengan analisis data historis untuk akurasi maksimal.</p>
                 <ul style="color: #dfe9ec; padding-left: 20px;">
                     <li>Monitoring tinggi air otomatis</li>
                     <li>Prediksi risiko berbasis AI</li>
@@ -455,6 +456,23 @@ def show_homepage():
             unsafe_allow_html=True
         )
     
+    with col2:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h3>ANALISIS STATISTIK</h3>
+                <p>Distribusi Gumbel untuk analisis nilai ekstrem dan perhitungan periode ulang banjir.</p>
+                <ul style="color: #dfe9ec; padding-left: 20px;">
+                    <li>Probabilitas kejadian ekstrem</li>
+                    <li>Periode ulang 5-50 tahun</li>
+                    <li>Risk assessment terstruktur</li>
+                    <li>Visualisasi data interaktif</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
 # ==================== KALKULATOR BANJIR PAGE ====================
 def show_flood_calculator_page():
     st.markdown(
