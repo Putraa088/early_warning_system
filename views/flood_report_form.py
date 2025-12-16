@@ -45,13 +45,13 @@ def show_flood_report_form(controller):
             )
         
         reporter_phone = st.text_input(
-            "Nomor Telepon (Opsional)",
+            "Nomor Telepon",
             placeholder="081234567890",
             help="Nomor telepon untuk konfirmasi"
         )
         
         photo_file = st.file_uploader(
-            "Foto Kejadian (Opsional)",
+            "Foto Kejadian (**WAJIB**)",
             type=['jpg', 'jpeg', 'png', 'gif'],
             help="Upload foto kejadian banjir jika ada"
         )
@@ -93,5 +93,6 @@ def show_flood_report_form(controller):
                         st.balloons()
                     else:
                         st.error(message)
+
 
 
