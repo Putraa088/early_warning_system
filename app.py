@@ -453,13 +453,11 @@ def show_homepage():
         st.markdown(
             """
             <div class="feature-card">
-                <h3>ANALISIS STATISTIK</h3>
-                <p>Distribusi Gumbel untuk analisis nilai ekstrem dan perhitungan periode ulang banjir.</p>
+                <h3>Apa Yang Dilakukan Sistem Ini?</h3>
                 <ul style="color: #dfe9ec; padding-left: 20px;">
-                    <li>Probabilitas kejadian ekstrem</li>
-                    <li>Periode ulang 5-50 tahun</li>
-                    <li>Risk assessment terstruktur</li>
-                    <li>Visualisasi data interaktif</li>
+                    <li>Memantau curah hujan dan tinggi air</li>
+                    <li>Memberikan perkiraan potensi banjir</li>
+                    <li>Menyampaikan peringatan dini apabila terjadi peningkatan risiko</li>
                 </ul>
             </div>
             """,
@@ -842,3 +840,4 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
+
