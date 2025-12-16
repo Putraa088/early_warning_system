@@ -24,8 +24,7 @@ for folder in ['controllers', 'models', 'views']:
         sys.path.insert(0, folder_path)
 
 # ==================== DATABASE INITIALIZATION ====================
-import os
-DB_PATH = os.path.join(os.getcwd(), 'flood_system.db')
+DB_PATH = 'flood_system.db'
 print(f"🔍 Checking database at: {os.path.abspath(DB_PATH)}")
 
 if not os.path.exists(DB_PATH):
@@ -436,7 +435,7 @@ def show_homepage():
     
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     
-    st.markdown("### Teantang Sistem")
+    st.markdown("### Tentang Sistem")
     
     col1 = st.columns(2)
     
@@ -444,33 +443,18 @@ def show_homepage():
         st.markdown(
             """
             <div class="feature-card">
-                <p>Sistem ini membantu memantau kondisi cuaca dan ketinggian banjir untuk membarikan informasi awal mengenai potensi banjir.</p>
+                <p>Sistem ini membantu mamantau kondisi cuaca dan ketinggian air untuk membarikan informasi awal mengenai potensi banjir.</p>
                 <ul style="color: #dfe9ec; padding-left: 20px;">
                     <li>Monitoring tinggi air otomatis</li>
                     <li>Prediksi risiko berbasis AI</li>
                     <li>Update data setiap 15 menit</li>
                     <li>Peringatan dini real-time</li>
-                    
-                <h3>ANALISIS STATISTIK</h3>
-                <p>Distribusi Gumbel untuk analisis nilai ekstrem dan perhitungan periode ulang banjir.</p>
-                <ul style="color: #dfe9ec; padding-left: 20px;">
-                    <li>Probabilitas kejadian ekstrem</li>
-                    <li>Periode ulang 5-50 tahun</li>
-                    <li>Risk assessment terstruktur</li>
-                    <li>Visualisasi data interaktif</li>
                 </ul>
             </div>
             """,
             unsafe_allow_html=True
         )
     
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-                </ul>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
 # ==================== KALKULATOR BANJIR PAGE ====================
 def show_flood_calculator_page():
     st.markdown(
@@ -847,7 +831,3 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
-
-
-
-
