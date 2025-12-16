@@ -1,5 +1,5 @@
 from models.FloodReportModel import FloodReportModel
-from models.GoogleSheetsModel import GoogleSheetsModel  # TAMBAH INI
+from models.GoogleSheetsModel import GoogleSheetsModel
 import os
 import uuid
 from datetime import datetime
@@ -8,8 +8,19 @@ import streamlit as st
 class FloodReportController:
     def __init__(self):
         self.flood_model = FloodReportModel()
-        self.sheets_model = GoogleSheetsModel()  # TAMBAH INI
+        self.sheets_model = None
         self.upload_folder = "uploads"
+        
+        # Initialize Google Sheets (with fallback)
+        try:
+            self.sheets_model = GoogleSheetsModel()
+            if self.sheets_model.client:
+                print("✅ Google Sheets model initialized successfully")
+            else:
+                print("⚠️ Google Sheets model created but not connected")
+        except Exception as e:
+            print(f"⚠️ Google Sheets initialization failed: {e}")
+            self.sheets_model = None
         
         if not os.path.exists(self.upload_folder):
             os.makedirs(self.upload_folder)
@@ -34,9 +45,9 @@ class FloodReportController:
             return True
 
     def submit_report(self, address, flood_height, reporter_name, reporter_phone=None, photo_file=None):
-        """Submit new flood report dengan limit validation dan Google Sheets"""
+        """Submit new flood report dengan Google Sheets integration"""
         photo_path = None
-        photo_url = None  # Untuk Google Sheets
+        photo_url = None
         
         try:
             # Get client IP
@@ -88,30 +99,33 @@ class FloodReportController:
                 print(f"✅ Report saved to SQLite with ID: {report_id}")
                 
                 # ========== SIMPAN KE GOOGLE SHEETS ==========
-                try:
-                    print("☁️ Saving report to Google Sheets...")
-                    
-                    # Prepare data for Google Sheets
-                    sheets_data = {
-                        'address': address,
-                        'flood_height': flood_height,
-                        'reporter_name': reporter_name,
-                        'reporter_phone': reporter_phone or '',
-                        'ip_address': client_ip,
-                        'photo_url': photo_url or ''
-                    }
-                    
-                    # Save to Google Sheets
-                    sheets_success = self.sheets_model.save_flood_report(sheets_data)
-                    
-                    if sheets_success:
-                        print("✅ Report also saved to Google Sheets!")
-                    else:
-                        print("⚠️ Report saved to SQLite but failed to save to Google Sheets")
+                if self.sheets_model and self.sheets_model.client:
+                    try:
+                        print("☁️ Saving report to Google Sheets...")
                         
-                except Exception as e:
-                    print(f"⚠️ Error saving to Google Sheets: {e}")
-                    # Lanjutkan meski Google Sheets error
+                        # Prepare data for Google Sheets
+                        sheets_data = {
+                            'address': address,
+                            'flood_height': flood_height,
+                            'reporter_name': reporter_name,
+                            'reporter_phone': reporter_phone or '',
+                            'ip_address': client_ip,
+                            'photo_url': photo_url or ''
+                        }
+                        
+                        # Save to Google Sheets
+                        sheets_success = self.sheets_model.save_flood_report(sheets_data)
+                        
+                        if sheets_success:
+                            print("✅ Report also saved to Google Sheets!")
+                        else:
+                            print("⚠️ Report saved to SQLite but failed to save to Google Sheets")
+                            
+                    except Exception as e:
+                        print(f"⚠️ Error saving to Google Sheets: {e}")
+                        # Lanjutkan meski Google Sheets error
+                else:
+                    print("ℹ️ Google Sheets not available, saving to SQLite only")
                 # ========== END GOOGLE SHEETS ==========
                 
                 # Cek count setelah submit
@@ -131,30 +145,69 @@ class FloodReportController:
             if photo_path and os.path.exists(photo_path):
                 os.remove(photo_path)
             return False, f"❌ Error: {str(e)}"
-
+    
+    # ========== FUNGSI UNTUK PREDIKSI ==========
+    
+    def save_prediction_to_sheets(self, prediction_data):
+        """Save prediction data to Google Sheets"""
+        if self.sheets_model and self.sheets_model.client:
+            try:
+                success = self.sheets_model.save_prediction(prediction_data)
+                return success
+            except Exception as e:
+                print(f"❌ Error saving prediction to Google Sheets: {e}")
+                return False
+        return False
+    
+    def update_monthly_statistics(self):
+        """Update monthly statistics in Google Sheets"""
+        if self.sheets_model and self.sheets_model.client:
+            try:
+                # Hitung statistik sederhana
+                current_month = datetime.now().strftime("%Y-%m")
+                reports = self.flood_model.get_month_reports()
+                total_reports = len(reports)
+                
+                stats_data = {
+                    'total_reports': total_reports,
+                    'avg_risk': 0.35,  # Contoh, bisa dihitung dari prediksi
+                    'high_risk_days': 0,
+                    'most_affected_area': self.get_most_affected_area(),
+                    'response_time_avg': 45
+                }
+                
+                success = self.sheets_model.update_statistics(stats_data)
+                return success
+            except Exception as e:
+                print(f"❌ Error updating monthly statistics: {e}")
+                return False
+        return False
+    
+    def get_most_affected_area(self):
+        """Get most affected area from reports"""
+        try:
+            reports = self.flood_model.get_month_reports()
+            if not reports:
+                return "Tidak ada data"
+            
+            # Simple logic: count by address
+            address_count = {}
+            for report in reports:
+                addr = report.get('address', '')
+                if addr:
+                    address_count[addr] = address_count.get(addr, 0) + 1
+            
+            if address_count:
+                return max(address_count, key=address_count.get)[:50]  # Limit length
+            return "Tidak terdeteksi"
+        except:
+            return "Error"
+    
     # ============ FUNGSI UNTUK VIEWS ============
     
     def get_today_reports(self):
-        """Get today's flood reports - gabung dari SQLite dan Google Sheets"""
-        try:
-            # Ambil dari SQLite dulu
-            sqlite_reports = self.flood_model.get_today_reports()
-            
-            # Coba ambil dari Google Sheets juga
-            try:
-                sheets_reports = self.sheets_model.get_recent_reports(limit=50)
-                print(f"📊 Found {len(sheets_reports)} reports from Google Sheets")
-                
-                # Gabungkan jika perlu (prioritas SQLite)
-                return sqlite_reports
-                
-            except Exception as e:
-                print(f"⚠️ Could not get reports from Google Sheets: {e}")
-                return sqlite_reports
-                
-        except Exception as e:
-            print(f"❌ Error getting today reports: {e}")
-            return []
+        """Get today's flood reports"""
+        return self.flood_model.get_today_reports()
 
     def get_month_reports(self):
         """Get this month's flood reports"""
@@ -167,6 +220,12 @@ class FloodReportController:
     def get_monthly_statistics(self):
         """Get monthly statistics for reports"""
         return self.flood_model.get_monthly_statistics()
+    
+    def get_google_sheets_stats(self):
+        """Get statistics from Google Sheets"""
+        if self.sheets_model:
+            return self.sheets_model.get_statistics()
+        return {}
     
     def get_client_ip(self):
         """Get client IP address - Streamlit compatible"""
