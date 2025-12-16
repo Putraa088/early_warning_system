@@ -6,7 +6,7 @@ import os
 
 class GoogleSheetsModel:
     def __init__(self):
-        """Initialize Google Sheets connection untuk flood_reports saja"""
+        """Initialize Google Sheets connection"""
         self.client = None
         self.spreadsheet = None
         self.setup_connection()
@@ -66,32 +66,14 @@ class GoogleSheetsModel:
             self.spreadsheet = None
     
     def get_worksheet(self, sheet_name="flood_reports"):
-        """Get worksheet by name - default ke flood_reports"""
+        """Get worksheet by name"""
         if not self.spreadsheet:
             return None
         
         try:
             return self.spreadsheet.worksheet(sheet_name)
-        except Exception as e:
-            print(f"⚠️ Worksheet '{sheet_name}' not found: {e}")
-            
-            # Coba buat worksheet jika tidak ada
-            try:
-                worksheet = self.spreadsheet.add_worksheet(title=sheet_name, rows=1000, cols=10)
-                print(f"✅ Created new worksheet: {sheet_name}")
-                
-                # Add headers if new worksheet
-                headers = [
-                    "Timestamp", "Address", "Flood Height (cm)", 
-                    "Reporter Name", "Reporter Phone", "IP Address", 
-                    "Photo URL", "Status"
-                ]
-                worksheet.append_row(headers)
-                
-                return worksheet
-            except Exception as create_error:
-                print(f"❌ Failed to create worksheet: {create_error}")
-                return None
+        except:
+            return None
     
     def get_wib_time(self):
         """Get current time in WIB (UTC+7)"""
@@ -104,26 +86,28 @@ class GoogleSheetsModel:
     # ========== HANYA UNTUK TAB 1: flood_reports ==========
     
     def save_flood_report(self, report_data):
-        """Save flood report to Google Sheets TAB 1 saja"""
+        """Save flood report to Google Sheets TAB 1 dengan waktu WIB"""
         try:
             ws = self.get_worksheet("flood_reports")
             if not ws:
                 print("❌ Worksheet 'flood_reports' not found")
                 return False
             
-            # Prepare data row with WIB time
+            # Prepare data row dengan waktu WIB
             wib_time = self.get_wib_time()
             timestamp = wib_time.strftime("%Y-%m-%d %H:%M:%S")
             
+            # Sesuai format kolom yang diminta:
+            # timestamp, alamat, tinggi banjir, nama pelapor, no hp, ip address, photo url, status
             row = [
-                timestamp,
-                report_data.get('address', ''),
-                report_data.get('flood_height', ''),
-                report_data.get('reporter_name', ''),
-                report_data.get('reporter_phone', ''),
-                report_data.get('ip_address', ''),
-                report_data.get('photo_url', ''),
-                'pending'  # Status default
+                timestamp,  # Kolom 1: timestamp (WIB)
+                report_data.get('address', ''),  # Kolom 2: alamat
+                report_data.get('flood_height', ''),  # Kolom 3: tinggi banjir
+                report_data.get('reporter_name', ''),  # Kolom 4: nama pelapor
+                report_data.get('reporter_phone', ''),  # Kolom 5: no hp
+                report_data.get('ip_address', ''),  # Kolom 6: ip address
+                report_data.get('photo_url', ''),  # Kolom 7: photo url
+                'pending'  # Kolom 8: status
             ]
             
             # Append to sheet
@@ -132,5 +116,5 @@ class GoogleSheetsModel:
             return True
             
         except Exception as e:
-            print(f"❌ Error saving flood report to Google Sheets: {e}")
+            print(f"❌ Error saving flood report: {e}")
             return False
