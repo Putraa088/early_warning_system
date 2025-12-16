@@ -442,12 +442,6 @@ st.markdown(
     <div class="feature-card">
         <h3>KECERDASAN BUATAN</h3>
         <p>Prediksi real-time menggunakan neural network dengan analisis data historis untuk akurasi maksimal.</p>
-        <ul style="color: #dfe9ec; padding-left: 20px;">
-            <li>Monitoring tinggi air otomatis</li>
-            <li>Prediksi risiko berbasis AI</li>
-            <li>Update data setiap 15 menit</li>
-            <li>Peringatan dini real-time</li>
-        </ul>
     </div>
     """,
     unsafe_allow_html=True
@@ -829,5 +823,6 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
+
 
 
