@@ -1,11 +1,21 @@
+# Google Sheets Credentials
+credentials.json
+*.json
+
+# Streamlit Secrets
+.streamlit/secrets.toml
+
 # Database
 flood_system.db
-flood_system.db.backup
+*.db
+*.sqlite
 
 # Uploads
 uploads/
-data_harian/
-data_bulanan/
+*.jpg
+*.jpeg
+*.png
+*.gif
 
 # Python
 __pycache__/
