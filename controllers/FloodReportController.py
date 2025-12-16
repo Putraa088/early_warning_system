@@ -1,4 +1,5 @@
 from models.FloodReportModel import FloodReportModel
+from models.GoogleSheetsModel import GoogleSheetsModel  # TAMBAH INI
 import os
 import uuid
 from datetime import datetime
@@ -7,6 +8,7 @@ import streamlit as st
 class FloodReportController:
     def __init__(self):
         self.flood_model = FloodReportModel()
+        self.sheets_model = GoogleSheetsModel()  # TAMBAH INI
         self.upload_folder = "uploads"
         
         if not os.path.exists(self.upload_folder):
@@ -32,8 +34,9 @@ class FloodReportController:
             return True
 
     def submit_report(self, address, flood_height, reporter_name, reporter_phone=None, photo_file=None):
-        """Submit new flood report dengan limit validation"""
+        """Submit new flood report dengan limit validation dan Google Sheets"""
         photo_path = None
+        photo_url = None  # Untuk Google Sheets
         
         try:
             # Get client IP
@@ -63,13 +66,15 @@ class FloodReportController:
                         f.write(photo_file.getbuffer())
                     
                     print("✅ Photo saved successfully")
+                    photo_url = f"uploads/{filename}"  # Simpan path relatif
                     
                 except Exception as e:
                     print(f"❌ Error saving photo: {e}")
                     photo_path = None
+                    photo_url = None
             
-            # Create report in database
-            print("💾 Saving report to database...")
+            # Create report in SQLite database
+            print("💾 Saving report to SQLite database...")
             report_id = self.flood_model.create_report(
                 address=address,
                 flood_height=flood_height,
@@ -80,13 +85,40 @@ class FloodReportController:
             )
             
             if report_id:
-                print(f"✅ Report saved successfully with ID: {report_id}")
+                print(f"✅ Report saved to SQLite with ID: {report_id}")
+                
+                # ========== SIMPAN KE GOOGLE SHEETS ==========
+                try:
+                    print("☁️ Saving report to Google Sheets...")
+                    
+                    # Prepare data for Google Sheets
+                    sheets_data = {
+                        'address': address,
+                        'flood_height': flood_height,
+                        'reporter_name': reporter_name,
+                        'reporter_phone': reporter_phone or '',
+                        'ip_address': client_ip,
+                        'photo_url': photo_url or ''
+                    }
+                    
+                    # Save to Google Sheets
+                    sheets_success = self.sheets_model.save_flood_report(sheets_data)
+                    
+                    if sheets_success:
+                        print("✅ Report also saved to Google Sheets!")
+                    else:
+                        print("⚠️ Report saved to SQLite but failed to save to Google Sheets")
+                        
+                except Exception as e:
+                    print(f"⚠️ Error saving to Google Sheets: {e}")
+                    # Lanjutkan meski Google Sheets error
+                # ========== END GOOGLE SHEETS ==========
                 
                 # Cek count setelah submit
                 new_count = self.flood_model.get_today_reports_count_by_ip(client_ip)
                 print(f"📊 Updated count after submit: {new_count}/10")
                 
-                return True, "✅ Laporan berhasil dikirim!"
+                return True, "✅ Laporan berhasil dikirim ke sistem!"
             else:
                 print("❌ Failed to save report to database")
                 if photo_path and os.path.exists(photo_path):
@@ -103,8 +135,26 @@ class FloodReportController:
     # ============ FUNGSI UNTUK VIEWS ============
     
     def get_today_reports(self):
-        """Get today's flood reports"""
-        return self.flood_model.get_today_reports()
+        """Get today's flood reports - gabung dari SQLite dan Google Sheets"""
+        try:
+            # Ambil dari SQLite dulu
+            sqlite_reports = self.flood_model.get_today_reports()
+            
+            # Coba ambil dari Google Sheets juga
+            try:
+                sheets_reports = self.sheets_model.get_recent_reports(limit=50)
+                print(f"📊 Found {len(sheets_reports)} reports from Google Sheets")
+                
+                # Gabungkan jika perlu (prioritas SQLite)
+                return sqlite_reports
+                
+            except Exception as e:
+                print(f"⚠️ Could not get reports from Google Sheets: {e}")
+                return sqlite_reports
+                
+        except Exception as e:
+            print(f"❌ Error getting today reports: {e}")
+            return []
 
     def get_month_reports(self):
         """Get this month's flood reports"""
