@@ -25,16 +25,23 @@ for folder in ['controllers', 'models', 'views']:
 
 # ==================== DATABASE INITIALIZATION ====================
 DB_PATH = 'flood_system.db'
+
+# Cek apakah database sudah ada
 if not os.path.exists(DB_PATH):
-    st.warning("Database belum diinisialisasi. Menjalankan init database...")
+    st.warning("Database belum diinisialisasi. Membuat database baru...")
     try:
-        # Panggil init database dari model
+        # Import dan buat instance model untuk membuat database
         from models.FloodReportModel import FloodReportModel
         model = FloodReportModel()
-        st.success("Database berhasil diinisialisasi!")
+        st.success("✅ Database berhasil diinisialisasi!")
     except Exception as e:
-        st.error(f"Gagal inisialisasi database: {e}")
-        st.stop()
+        st.error(f"❌ Gagal inisialisasi database: {e}")
+        # Tampilkan error detail untuk debugging
+        st.error(f"Error detail: {str(e)}")
+        # Tetap lanjut tanpa database
+        st.info("⚠️ Aplikasi akan berjalan tanpa database lokal")
+else:
+    print(f"✅ Database sudah ada: {DB_PATH}")
 
 # ==================== IMPORT CONTROLLERS ====================
 try:
@@ -862,4 +869,5 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
+
 
