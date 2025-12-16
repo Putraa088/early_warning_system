@@ -1,12 +1,13 @@
 import streamlit as st
 
 def show_flood_report_form(controller):
-    """Display flood report form with simple design - FIXED VALIDATION"""
+    """Display flood report form with simple design - FIXED SUBMIT BUTTON"""
     
     with st.container():
-        st.markdown("### Isi Form Laporan")
+        st.markdown("### 📝 Form Laporan Banjir")
+        st.caption("Isi form di bawah untuk melaporkan kejadian banjir di sekitar Anda")
         
-        with st.form("flood_report_form", clear_on_submit=True):  # ADDED clear_on_submit
+        with st.form("flood_report_form", clear_on_submit=True):
             # Form fields
             col1, col2 = st.columns(2)
             
@@ -14,54 +15,46 @@ def show_flood_report_form(controller):
                 address = st.text_input(
                     "Alamat Lengkap*",
                     placeholder="Jl/gang/kelurahan/kecamatan",
-                    help="Masukkan alamat lengkap kejadian banjir",
-                    key="address_input"
+                    help="Masukkan alamat lengkap kejadian banjir"
                 )
                 
                 flood_height = st.selectbox(
                     "Tinggi Banjir*",
                     ["Pilih tinggi banjir", "Setinggi mata kaki", "Setinggi betis", 
-                     "Setinggi lutut", "Lebih dari lutut"],
-                    key="flood_height_select"
+                     "Setinggi lutut", "Lebih dari lutut"]
                 )
             
             with col2:
                 reporter_name = st.text_input(
                     "Nama Pelapor*",
-                    placeholder="Nama lengkap Anda",
-                    key="reporter_name_input"
+                    placeholder="Nama lengkap Anda"
                 )
                 
                 reporter_phone = st.text_input(
                     "Nomor Telepon (Opsional)",
                     placeholder="0812-3456-7890",
-                    help="Opsional, untuk konfirmasi",
-                    key="reporter_phone_input"
+                    help="Opsional, untuk konfirmasi"
                 )
             
             # Photo upload - dijadikan OPTIONAL untuk testing
             photo_file = st.file_uploader(
                 "Unggah Foto (Opsional)",
                 type=['jpg', 'jpeg', 'png'],
-                help="Upload foto kondisi banjir jika tersedia",
-                key="photo_uploader"
+                help="Upload foto kondisi banjir jika tersedia"
             )
             
-            # Submit button
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                submitted = st.form_submit_button(
-                    "📤 Kirim Laporan",
-                    type="primary",
-                    use_container_width=True,
-                    key="submit_button"
-                )
+            # Submit button - PERBAIKAN DI SINI
+            submitted = st.form_submit_button(
+                "📤 Kirim Laporan",
+                type="primary",
+                use_container_width=True
+            )
             
             if submitted:
                 st.write("---")
                 st.info("⏳ Memproses laporan...")
                 
-                # VALIDATION - FIXED
+                # VALIDATION
                 errors = []
                 
                 if not address or address.strip() == "":
@@ -105,7 +98,7 @@ def show_flood_report_form(controller):
                                 st.write("• Database sistem")
                                 st.write("• Laporan harian")
                                 st.write("• Rekapan bulanan")
-                                if controller.sheets_model and controller.sheets_model.client:
+                                if hasattr(controller, 'sheets_model') and controller.sheets_model and controller.sheets_model.client:
                                     st.write("• Google Sheets")
                         else:
                             st.error(message)
