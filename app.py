@@ -443,7 +443,7 @@ def show_homepage():
         st.markdown(
             """
             <div class="feature-card">
-                <p>Sebagai platform berbasis teknologi, Sistem Peringatan Dini Banjir ini mengintegrasikan pemantauan real-time parameter hidrometeorologi dengan algoritma prediktif untuk mengidentifikasi risiko banjir secara dini. Tujuannya adalah memberdayakan masyarakat dan pihak terkait dengan informasi yang akurat dan tepat waktu, sehingga dapat mengambil langkah proaktif dalam kesiapsiagaan dan mitigasi untuk meminimalkan dampak banjir..</p>
+                <p>Sebagai platform berbasis teknologi, Sistem ini mengintegrasikan pemantauan real-time parameter hidrometeorologi dengan algoritma prediktif untuk mengidentifikasi risiko banjir secara dini. Tujuannya adalah memberdayakan masyarakat dan pihak terkait dengan informasi yang akurat dan tepat waktu, sehingga dapat mengambil langkah proaktif dalam kesiapsiagaan dan mitigasi untuk meminimalkan dampak banjir..</p>
             </div>
             """,
             unsafe_allow_html=True
@@ -840,4 +840,5 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
+
 
