@@ -1,31 +1,40 @@
-# Google Sheets Credentials
-credentials.json
-*.json
-
-# Streamlit Secrets
-.streamlit/secrets.toml
-
-# Database
-flood_system.db
-*.db
-*.sqlite
-
-# Uploads
-uploads/
-*.jpg
-*.jpeg
-*.png
-*.gif
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Database
+flood_system.db
+*.db
+*.sqlite3
+
+# Uploads (jangan upload ke GitHub)
+uploads/*
+!uploads/.gitkeep
+
+# Environment
+.env
+.venv
 env/
 venv/
-.venv/
+ENV/
 env.bak/
 venv.bak/
 
@@ -39,5 +48,5 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
+# Streamlit
+.streamlit/config.toml
