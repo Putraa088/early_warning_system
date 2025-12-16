@@ -115,46 +115,4 @@ def show_prediction_dashboard(controller):
                     st.write(f"- Analisis: {pred['gumbel_message']}")
             
             st.markdown("---")
-    
-    # Recommendations
-    show_recommendations(overall_status)
-
-def show_recommendations(risk_status):
-    """Show recommendations based on risk status"""
-    
-    st.markdown("### Rekomendasi")
-    
-    if risk_status == "RENDAH":
-        with st.container():
-            st.info("""
-            **Kondisi Aman**
             
-            Tetap waspada dan lakukan persiapan:
-            1. Pantau perkembangan cuaca dan informasi dari pihak berwenang
-            2. Pastikan saluran air di sekitar rumah lancar
-            3. Siapkan dokumen penting di tempat aman
-            """)
-    
-    elif risk_status == "MENENGAH":
-        with st.container():
-            st.warning("""
-            **Status Siaga**
-            
-            Tingkatkan kewaspadaan:
-            1. Hindari daerah rendah dan tepi sungai
-            2. Siapkan tas darurat berisi dokumen penting, obat-obatan, dan kebutuhan dasar
-            3. Pantau informasi terkini secara berkala
-            4. Pastikan kendaraan dalam kondisi siap
-            """)
-    
-    else:
-        with st.container():
-            st.error("""
-            **Status Bahaya**
-            
-            Segera lakukan tindakan:
-            1. Evakuasi ke tempat yang lebih tinggi
-            2. Matikan listrik dan gas di rumah
-            3. Jangan berjalan di arus banjir
-            4. Ikuti instruksi dari petugas berwenang
-            """)
