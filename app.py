@@ -475,44 +475,6 @@ def show_homepage():
         )
     
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    
-    st.markdown("### Fitur Baru: Kalkulator Banjir")
-    
-    col3, col4 = st.columns(2)
-    
-    with col3:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h3>INPUT FLEKSIBEL</h3>
-                <p>Masukkan parameter cuaca sesuai kondisi lokasi Anda dengan input yang mudah.</p>
-                <ul style="color: #dfe9ec; padding-left: 20px;">
-                    <li>Curah hujan (0-500 mm)</li>
-                    <li>Tinggi air (60-150 mdpl)</li>
-                    <li>Kelembapan (0-100%)</li>
-                    <li>Suhu min & max</li>
-                </ul>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    
-    with col4:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h3>HASIL AKURAT</h3>
-                <p>Dapatkan prediksi risiko banjir berdasarkan kondisi spesifik di lokasi Anda.</p>
-                <ul style="color: #dfe9ec; padding-left: 20px;">
-                    <li>Status risiko jelas (RENDAH/MENENGAH/TINGGI)</li>
-                    <li>Rekomendasi tindakan spesifik</li>
-                    <li>Detail parameter lengkap</li>
-                    <li>Visualisasi risk level</li>
-                </ul>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
 
 # ==================== KALKULATOR BANJIR PAGE ====================
 def show_flood_calculator_page():
@@ -890,4 +852,5 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
+
 
