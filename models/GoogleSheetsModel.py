@@ -65,9 +65,8 @@ class GoogleSheetsModel:
             ws = self.get_worksheet("flood_reports")
             if ws:
                 print(f"✅ Worksheet found: {ws.title}")
-                print(f"✅ Row count: {ws.row_count}, Col count: {ws.col_count}")
             else:
-                print("❌ Worksheet 'flood_reports' not found")
+                print("⚠️ Worksheet 'flood_reports' not found")
             
         except Exception as e:
             print(f"❌ Google Sheets connection failed: {e}")
@@ -86,7 +85,7 @@ class GoogleSheetsModel:
             return None
     
     def save_flood_report(self, report_data):
-        """Save flood report to Google Sheets - SESUAIKAN DENGAN KOLOM"""
+        """Save flood report to Google Sheets"""
         try:
             ws = self.get_worksheet("flood_reports")
             if not ws:
@@ -94,8 +93,6 @@ class GoogleSheetsModel:
                 return False
             
             # Prepare data row sesuai dengan kolom di Google Sheets
-            # Kolom: Timestamp | Alamat | Tinggi Banjir | Nama Pelapor | No HP | IP Address | Photo URL | Status
-            
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             row = [
@@ -123,12 +120,6 @@ class GoogleSheetsModel:
             ws.append_row(row)
             print("✅ Data appended to Google Sheets")
             
-            # Verify the row was added
-            all_values = ws.get_all_values()
-            if all_values:
-                last_row = all_values[-1]
-                print(f"✅ Last row in sheet: {last_row}")
-            
             return True
             
         except Exception as e:
@@ -136,39 +127,3 @@ class GoogleSheetsModel:
             import traceback
             traceback.print_exc()
             return False
-    
-    def get_recent_reports(self, limit=20):
-        """Get recent reports from Google Sheets"""
-        try:
-            ws = self.get_worksheet("flood_reports")
-            if not ws:
-                return []
-            
-            # Get all values
-            all_values = ws.get_all_values()
-            if len(all_values) <= 1:  # Hanya header atau kosong
-                return []
-            
-            # Skip header row
-            data_rows = all_values[1:]  
-            
-            # Convert to list of dictionaries
-            reports = []
-            for row in data_rows[:limit]:
-                if len(row) >= 8:  # Pastikan ada 8 kolom
-                    reports.append({
-                        'timestamp': row[0] if len(row) > 0 else '',
-                        'address': row[1] if len(row) > 1 else '',
-                        'flood_height': row[2] if len(row) > 2 else '',
-                        'reporter_name': row[3] if len(row) > 3 else '',
-                        'reporter_phone': row[4] if len(row) > 4 else '',
-                        'ip_address': row[5] if len(row) > 5 else '',
-                        'photo_url': row[6] if len(row) > 6 else '',
-                        'status': row[7] if len(row) > 7 else ''
-                    })
-            
-            return reports
-            
-        except Exception as e:
-            print(f"❌ Error getting recent reports: {e}")
-            return []
