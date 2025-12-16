@@ -2,12 +2,9 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
-import base64
-from io import BytesIO
-from PIL import Image
 
 def show_monthly_reports_summary(controller):
-    """Display monthly reports summary with Base64 photos"""
+    """Display monthly reports summary"""
     
     st.markdown("""
     <style>
@@ -21,18 +18,6 @@ def show_monthly_reports_summary(controller):
         display: inline-block;
         margin-left: 8px;
     }
-    .photo-preview {
-        max-width: 100px;
-        max-height: 100px;
-        border-radius: 8px;
-        border: 2px solid #333;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
-    .photo-preview:hover {
-        transform: scale(1.05);
-        border-color: #00a8ff;
-    }
     </style>
     """, unsafe_allow_html=True)
     
@@ -43,12 +28,9 @@ def show_monthly_reports_summary(controller):
         st.info(" Tidak ada laporan banjir untuk bulan ini.")
         return
     
-    # Statistics
+    # Daftar laporan
     current_month = datetime.now().strftime('%B %Y')
     total_reports = len(reports)
-    
-    # Count reports with photos
-    reports_with_photos = sum(1 for r in reports if r.get('photo_base64') and len(r['photo_base64']) > 100)
     
     # Filter untuk mendapatkan laporan hari ini
     today = datetime.now().strftime('%Y-%m-%d')
@@ -59,21 +41,22 @@ def show_monthly_reports_summary(controller):
     with col1:
         st.metric("Total Laporan", total_reports)
     with col2:
-        st.metric("Dengan Foto", reports_with_photos)
-    with col3:
         st.metric("Laporan Hari Ini", len(today_reports))
-    with col4:
+    with col3:
         unique_reporters = len(set(r['reporter_name'] for r in reports))
         st.metric("Jumlah Pelapor", unique_reporters)
+    with col4:
+        locations = len(set(r['address'] for r in reports))
+        st.metric("Lokasi Berbeda", locations)
     
     st.markdown("---")
     
     st.markdown(f"###  Daftar Laporan Bulan {current_month}")
     
-    # Tampilkan laporan dengan thumbnail
+    # Tampilkan laporan
     for i, report in enumerate(reports, 1):
         with st.container():
-            col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 1, 2])
+            col1, col2, col3, col4, col5 = st.columns([4, 2, 2, 2, 1])
             
             with col1:
                 # Alamat dengan badge jika laporan hari ini
@@ -99,88 +82,19 @@ def show_monthly_reports_summary(controller):
                 st.write(report['reporter_name'])
             
             with col5:
-                # Show photo thumbnail if available
-                if report.get('photo_base64') and len(report['photo_base64']) > 100:
-                    try:
-                        # Create thumbnail from Base64
-                        image_data = base64.b64decode(report['photo_base64'][:10000])  # First part only for thumbnail
-                        image = Image.open(BytesIO(image_data))
-                        
-                        # Resize for thumbnail
-                        image.thumbnail((100, 100))
-                        
-                        # Display clickable thumbnail
-                        if st.button("👁️", key=f"thumb_{report['id']}", help="Klik untuk lihat foto penuh"):
-                            display_full_photo_base64(report['photo_base64'], report['address'])
-                    except:
-                        st.write("📷")
+                if report.get('photo_path') and os.path.exists(report['photo_path']):
+                    if st.button("📷", key=f"view_monthly_{report['id']}", help="Lihat foto"):
+                        with st.expander(f"Foto - {report['address']}"):
+                            try:
+                                st.image(report['photo_path'], use_column_width=True)
+                            except:
+                                st.warning("Foto tidak dapat ditampilkan")
                 else:
                     st.write("📭")
-            
-            with col6:
-                # Action buttons
-                if st.button("📋 Detail", key=f"detail_{report['id']}", use_container_width=True):
-                    show_report_details(report)
         
         # Divider antar laporan
         if i < total_reports:
             st.divider()
-
-def display_full_photo_base64(base64_string, address):
-    """Display full photo from Base64 in an expander"""
-    with st.expander(f"📸 Foto Lengkap: {address}", expanded=True):
-        try:
-            # Check if truncated
-            if base64_string.endswith('...[TRUNCATED]'):
-                st.warning("⚠️ Foto terlalu besar, hanya preview tersedia di Google Sheets")
-                base64_string = base64_string.replace('...[TRUNCATED]', '')
-            
-            # Decode Base64
-            image_data = base64.b64decode(base64_string)
-            
-            # Create BytesIO object
-            image_bytes = BytesIO(image_data)
-            
-            # Open image
-            image = Image.open(image_bytes)
-            
-            # Display
-            st.image(image, use_column_width=True, caption=f"Laporan dari: {address}")
-            
-            # Image info
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("Ukuran File", f"{len(image_data):,} bytes")
-            with col2:
-                st.metric("Dimensi", f"{image.size[0]}x{image.size[1]}")
-            
-        except Exception as e:
-            st.error(f"❌ Gagal menampilkan foto: {str(e)}")
-
-def show_report_details(report):
-    """Show detailed report information"""
-    with st.expander(f"📋 Detail Laporan: {report['address']}", expanded=True):
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.write("**📝 Informasi Laporan**")
-            st.write(f"Alamat: {report['address']}")
-            st.write(f"Tinggi Banjir: {report['flood_height']}")
-            st.write(f"Tanggal: {report['report_date']}")
-            st.write(f"Waktu: {report['report_time']}")
-        
-        with col2:
-            st.write("**👤 Informasi Pelapor**")
-            st.write(f"Nama: {report['reporter_name']}")
-            if report['reporter_phone']:
-                st.write(f"Telepon: {report['reporter_phone']}")
-            st.write(f"IP Address: {report.get('ip_address', 'N/A')}")
-        
-        # Show photo if available
-        if report.get('photo_base64') and len(report['photo_base64']) > 100:
-            st.write("---")
-            st.write("** Foto Laporan**")
-            display_full_photo_base64(report['photo_base64'], report['address'])
 
 def format_date_full(date_string):
     """Format date untuk display lengkap"""
