@@ -6,7 +6,7 @@ import os
 
 class GoogleSheetsModel:
     def __init__(self):
-        """Initialize Google Sheets connection untuk semua tab"""
+        """Initialize Google Sheets connection untuk flood_reports saja"""
         self.client = None
         self.spreadsheet = None
         self.setup_connection()
@@ -65,15 +65,33 @@ class GoogleSheetsModel:
             self.client = None
             self.spreadsheet = None
     
-    def get_worksheet(self, sheet_name):
-        """Get worksheet by name"""
+    def get_worksheet(self, sheet_name="flood_reports"):
+        """Get worksheet by name - default ke flood_reports"""
         if not self.spreadsheet:
             return None
         
         try:
             return self.spreadsheet.worksheet(sheet_name)
-        except:
-            return None
+        except Exception as e:
+            print(f"⚠️ Worksheet '{sheet_name}' not found: {e}")
+            
+            # Coba buat worksheet jika tidak ada
+            try:
+                worksheet = self.spreadsheet.add_worksheet(title=sheet_name, rows=1000, cols=10)
+                print(f"✅ Created new worksheet: {sheet_name}")
+                
+                # Add headers if new worksheet
+                headers = [
+                    "Timestamp", "Address", "Flood Height (cm)", 
+                    "Reporter Name", "Reporter Phone", "IP Address", 
+                    "Photo URL", "Status"
+                ]
+                worksheet.append_row(headers)
+                
+                return worksheet
+            except Exception as create_error:
+                print(f"❌ Failed to create worksheet: {create_error}")
+                return None
     
     def get_wib_time(self):
         """Get current time in WIB (UTC+7)"""
@@ -83,10 +101,10 @@ class GoogleSheetsModel:
         wib_time = utc_now + timedelta(hours=7)
         return wib_time
     
-    # ========== UNTUK SEMUA TAB ==========
+    # ========== HANYA UNTUK TAB 1: flood_reports ==========
     
     def save_flood_report(self, report_data):
-        """Save flood report to Google Sheets (TAB 1)"""
+        """Save flood report to Google Sheets TAB 1 saja"""
         try:
             ws = self.get_worksheet("flood_reports")
             if not ws:
@@ -105,7 +123,7 @@ class GoogleSheetsModel:
                 report_data.get('reporter_phone', ''),
                 report_data.get('ip_address', ''),
                 report_data.get('photo_url', ''),
-                'pending'
+                'pending'  # Status default
             ]
             
             # Append to sheet
@@ -115,62 +133,4 @@ class GoogleSheetsModel:
             
         except Exception as e:
             print(f"❌ Error saving flood report to Google Sheets: {e}")
-            return False
-    
-    def save_daily_report(self, report_data):
-        """Save to daily reports worksheet"""
-        try:
-            ws = self.get_worksheet("daily_reports")
-            if not ws:
-                print("❌ Worksheet 'daily_reports' not found")
-                return False
-            
-            wib_time = self.get_wib_time()
-            timestamp = wib_time.strftime("%Y-%m-%d %H:%M:%S")
-            
-            row = [
-                timestamp,
-                report_data.get('address', ''),
-                report_data.get('flood_height', ''),
-                report_data.get('reporter_name', ''),
-                report_data.get('reporter_phone', ''),
-                report_data.get('ip_address', ''),
-                report_data.get('photo_url', '')
-            ]
-            
-            ws.append_row(row)
-            print(f"✅ Daily report saved to Google Sheets")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error saving daily report: {e}")
-            return False
-    
-    def save_monthly_report(self, report_data):
-        """Save to monthly reports worksheet"""
-        try:
-            ws = self.get_worksheet("monthly_reports")
-            if not ws:
-                print("❌ Worksheet 'monthly_reports' not found")
-                return False
-            
-            wib_time = self.get_wib_time()
-            timestamp = wib_time.strftime("%Y-%m-%d %H:%M:%S")
-            
-            row = [
-                timestamp,
-                report_data.get('address', ''),
-                report_data.get('flood_height', ''),
-                report_data.get('reporter_name', ''),
-                report_data.get('reporter_phone', ''),
-                report_data.get('ip_address', ''),
-                report_data.get('photo_url', '')
-            ]
-            
-            ws.append_row(row)
-            print(f"✅ Monthly report saved to Google Sheets")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error saving monthly report: {e}")
             return False
