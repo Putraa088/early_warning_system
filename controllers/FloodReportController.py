@@ -17,17 +17,6 @@ class FloodReportController:
             self.sheets_model = GoogleSheetsModel()
             if self.sheets_model and hasattr(self.sheets_model, 'client') and self.sheets_model.client:
                 print("✅ Google Sheets connected for flood reports")
-                
-                # Test worksheet access
-                ws = self.sheets_model.get_worksheet("flood_reports")
-                if ws:
-                    print(f"✅ Worksheet accessible: {ws.title}")
-                    # Print header untuk verifikasi
-                    all_values = ws.get_all_values()
-                    if all_values and len(all_values) > 0:
-                        print(f"✅ Worksheet headers: {all_values[0]}")
-                else:
-                    print("⚠️ Worksheet 'flood_reports' not found")
             else:
                 print("⚠️ Google Sheets offline - using SQLite only")
                 self.sheets_model = None
@@ -37,6 +26,7 @@ class FloodReportController:
         
         # Create upload folder
         self._ensure_upload_folder()
+        print("✅ FloodReportController initialized")
     
     def _ensure_upload_folder(self):
         """Ensure upload folder exists"""
@@ -48,7 +38,7 @@ class FloodReportController:
                 print(f"✅ Upload folder exists: {self.upload_folder}")
         except Exception as e:
             print(f"❌ Error creating upload folder: {e}")
-
+    
     def check_daily_limit(self, ip_address):
         """Check if daily limit (10 reports per IP) has been reached"""
         try:
@@ -59,7 +49,7 @@ class FloodReportController:
         except Exception as e:
             print(f"⚠️ Error in check_daily_limit: {e}")
             return True
-
+    
     def submit_report(self, address, flood_height, reporter_name, reporter_phone=None, photo_file=None):
         """Submit new flood report"""
         photo_path = None
@@ -144,13 +134,13 @@ class FloodReportController:
                     success = self.sheets_model.save_flood_report(sheets_data)
                     if success:
                         print("✅ Report saved to Google Sheets")
-                        gs_status = "✅ (dan Google Sheets)"
+                        gs_status = " (dan Google Sheets)"
                     else:
                         print("⚠️ Failed to save to Google Sheets")
-                        gs_status = "✅ (Google Sheets gagal)"
+                        gs_status = " (Google Sheets gagal)"
                 except Exception as e:
                     print(f"⚠️ Error saving to Google Sheets: {e}")
-                    gs_status = "✅ (Google Sheets error)"
+                    gs_status = " (Google Sheets error)"
             else:
                 print("ℹ️ Google Sheets not available")
                 gs_status = ""
@@ -159,7 +149,7 @@ class FloodReportController:
             today_reports = self.flood_model.get_today_reports()
             print(f"✅ Verification: Total reports today = {len(today_reports)}")
             
-            return True, f"✅ Laporan berhasil dikirim! Data telah disimpan di database {gs_status}"
+            return True, f"✅ Laporan berhasil dikirim! Data telah disimpan di database{gs_status}."
                 
         except Exception as e:
             print(f"❌ CRITICAL Error in submit_report: {e}")
@@ -179,11 +169,11 @@ class FloodReportController:
     def get_today_reports(self):
         """Get today's flood reports"""
         return self.flood_model.get_today_reports()
-
+    
     def get_month_reports(self):
         """Get this month's flood reports"""
         return self.flood_model.get_month_reports()
-
+    
     def get_all_reports(self):
         """Get all flood reports"""
         return self.flood_model.get_all_reports()
