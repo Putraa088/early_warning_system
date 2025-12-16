@@ -1,78 +1,97 @@
 import streamlit as st
+from datetime import datetime
 
 def show_flood_report_form(controller):
-    """Display flood report form with simple design"""
+    """Show flood report form"""
     
-    with st.container():
-        st.markdown("### Isi Form Laporan")
+    # Display current WIB time
+    current_time = controller.get_current_wib_time()
+    st.info(f"Waktu saat ini: **{current_time}**")
+    
+    with st.form("flood_report_form"):
+        st.markdown("### Formulir Laporan Banjir")
         
-        with st.form("flood_report_form"):
-            # Form fields
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                address = st.text_input(
-                    "Alamat Lengkap",
-                    placeholder="Jl/gang/kelurahan/kecamatan",
-                    help="Masukkan alamat lengkap kejadian banjir"
-                )
-                
-                flood_height = st.selectbox(
-                    "Tinggi Banjir",
-                    ["Pilih tinggi banjir", "Setinggi mata kaki", "Setinggi betis", "Setinggi lutut", "Lebih dari lutut"]
-                )
-            
-            with col2:
-                reporter_name = st.text_input(
-                    "Nama Pelapor",
-                    placeholder="Nama lengkap Anda"
-                )
-                
-                reporter_phone = st.text_input(
-                    "Nomor Telepon",
-                    placeholder="0812-3456-7890",
-                    help="Opsional, untuk konfirmasi"
-                )
-            
-            # Photo upload
-            photo_file = st.file_uploader(
-                "Unggah Foto (**WAJIB**)",
-                type=['jpg', 'jpeg', 'png'],
-                help="Upload foto kondisi banjir jika tersedia"
+        # Form fields
+        address = st.text_area(
+            "Lokasi Kejadian*",
+            placeholder="Contoh: Jl. Diponegoro No. 52, Salatiga, Jawa Tengah",
+            help="Sebutkan lokasi kejadian banjir dengan jelas"
+        )
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            flood_height = st.number_input(
+                "Tinggi Banjir (cm)*",
+                min_value=0.0,
+                max_value=500.0,
+                step=0.1,
+                help="Tinggi genangan air dalam centimeter"
             )
-            
-            # Submit button
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                submitted = st.form_submit_button(
-                    "Kirim Laporan",
-                    type="primary",
-                    use_container_width=True
-                )
-            
-            if submitted:
-                # Validation
-                if not address or address.strip() == "":
-                    st.error("Alamat harus diisi")
-                elif flood_height == "Pilih tinggi banjir":
-                    st.error("Pilih tinggi banjir")
-                elif not reporter_name or reporter_name.strip() == "":
-                    st.error("Nama pelapor harus diisi")
-                else:
-                    with st.spinner("Mengirim laporan..."):
-                        try:
-                            success, message = controller.submit_report(
-                                address=address,
-                                flood_height=flood_height,
-                                reporter_name=reporter_name,
-                                reporter_phone=reporter_phone,
-                                photo_file=photo_file
-                            )
+        
+        with col2:
+            reporter_name = st.text_input(
+                "Nama Pelapor*",
+                placeholder="Nama lengkap pelapor",
+                help="Nama Anda sebagai pelapor"
+            )
+        
+        reporter_phone = st.text_input(
+            "Nomor Telepon (Opsional)",
+            placeholder="081234567890",
+            help="Nomor telepon untuk konfirmasi"
+        )
+        
+        photo_file = st.file_uploader(
+            "Foto Kejadian (Opsional)",
+            type=['jpg', 'jpeg', 'png', 'gif'],
+            help="Upload foto kejadian banjir jika ada"
+        )
+        
+        if photo_file:
+            st.image(photo_file, caption="Pratinjau Foto", width=300)
+        
+        # Terms and conditions
+        st.markdown("---")
+        agreed = st.checkbox(
+            "Saya menyetujui bahwa data yang saya berikan adalah benar dan dapat dipertanggungjawabkan*"
+        )
+        
+        # Submit button
+        submit_col1, submit_col2, submit_col3 = st.columns([1, 2, 1])
+        with submit_col2:
+            submitted = st.form_submit_button(
+                "📤 KIRIM LAPORAN",
+                use_container_width=True,
+                type="primary",
+                disabled=not agreed
+            )
+        
+        if submitted:
+            if not address or not reporter_name or flood_height <= 0:
+                st.error("❌ Harap isi semua field yang wajib diisi (*)")
+            else:
+                with st.spinner("Mengirim laporan..."):
+                    success, message = controller.submit_report(
+                        address=address,
+                        flood_height=flood_height,
+                        reporter_name=reporter_name,
+                        reporter_phone=reporter_phone,
+                        photo_file=photo_file
+                    )
+                    
+                    if success:
+                        st.success(message)
+                        st.balloons()
+                        
+                        # Show summary
+                        with st.expander("📋 Ringkasan Laporan", expanded=True):
+                            st.markdown(f"""
+                            **Laporan berhasil dikirim pada:** {current_time}
                             
-                            if success:
-                                st.success(message)
-                                st.info("Data Anda telah dicatat. Terima kasih atas laporannya.")
-                            else:
-                                st.error(message)
-                        except Exception as e:
-                            st.error(f"Terjadi kesalahan: {str(e)}")
+                            **Lokasi:** {address}
+                            **Tinggi Banjir:** {flood_height} cm
+                            **Nama Pelapor:** {reporter_name}
+                            """)
+                    else:
+                        st.error(message)
