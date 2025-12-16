@@ -28,8 +28,9 @@ DB_PATH = 'flood_system.db'
 if not os.path.exists(DB_PATH):
     st.warning("Database belum diinisialisasi. Menjalankan init database...")
     try:
-        from init_tables import init_database
-        init_database()
+        # Panggil init database dari model
+        from models.FloodReportModel import FloodReportModel
+        model = FloodReportModel()
         st.success("Database berhasil diinisialisasi!")
     except Exception as e:
         st.error(f"Gagal inisialisasi database: {e}")
@@ -861,3 +862,4 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
+
