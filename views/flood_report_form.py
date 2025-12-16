@@ -16,7 +16,6 @@ def show_flood_report_form(controller):
         col1, col2 = st.columns(2)
         
         with col1:
-            # DROPDOWN untuk tinggi banjir (pilihan, bukan angka manual)
             flood_options = {
                 "Pilih tinggi banjir": 0,
                 "Setinggi Mata Kaki": 20,
@@ -94,4 +93,5 @@ def show_flood_report_form(controller):
                         st.balloons()
                     else:
                         st.error(message)
+
 
