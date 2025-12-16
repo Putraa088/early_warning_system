@@ -19,10 +19,10 @@ def show_flood_report_form(controller):
             # DROPDOWN untuk tinggi banjir (pilihan, bukan angka manual)
             flood_options = {
                 "Pilih tinggi banjir": 0,
-                "Rendah (10-30 cm)": 20,
-                "Sedang (31-70 cm)": 50,
-                "Tinggi (71-150 cm)": 100,
-                "Sangat Tinggi (>150 cm)": 200
+                "Setinggi Mata Kaki": 20,
+                "Setinggi Betis": 50,
+                "Setinggi Lutut": 100,
+                "Diatas Lutut": 200
             }
             
             flood_height_text = st.selectbox(
@@ -94,3 +94,4 @@ def show_flood_report_form(controller):
                         st.balloons()
                     else:
                         st.error(message)
+
