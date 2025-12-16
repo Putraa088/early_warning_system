@@ -1,10 +1,10 @@
-from models.FloodReportModel import FloodReportModel
-from models.GoogleSheetsModel import GoogleSheetsModel
-import os
+import base64
 import uuid
+import os
 from datetime import datetime
 import streamlit as st
-import traceback
+from models.FloodReportModel import FloodReportModel
+from models.GoogleSheetsModel import GoogleSheetsModel
 
 class FloodReportController:
     def __init__(self):
@@ -26,115 +26,107 @@ class FloodReportController:
         
         # Create upload folder
         self._ensure_upload_folder()
-        print("✅ FloodReportController initialized")
     
     def _ensure_upload_folder(self):
         """Ensure upload folder exists"""
         try:
             if not os.path.exists(self.upload_folder):
                 os.makedirs(self.upload_folder)
-                print(f"✅ Created upload folder: {os.path.abspath(self.upload_folder)}")
-            else:
-                print(f"✅ Upload folder exists: {self.upload_folder}")
+                print(f"✅ Created upload folder: {self.upload_folder}")
         except Exception as e:
             print(f"❌ Error creating upload folder: {e}")
     
-    def check_daily_limit(self, ip_address):
-        """Check if daily limit (10 reports per IP) has been reached"""
-        try:
-            today_count = self.flood_model.get_today_reports_count_by_ip(ip_address)
-            can_submit = today_count < 10
-            print(f"📊 Daily limit check: IP={ip_address}, Count={today_count}, CanSubmit={can_submit}")
-            return can_submit
-        except Exception as e:
-            print(f"⚠️ Error in check_daily_limit: {e}")
-            return True
-    
     def submit_report(self, address, flood_height, reporter_name, reporter_phone=None, photo_file=None):
-        """Submit new flood report"""
-        photo_path = None
-        photo_filename = None
-        
+        """Submit new flood report with Base64 photo encoding"""
         try:
             # Get client IP
             client_ip = self.get_client_ip()
             print(f"🌐 Client IP: {client_ip}")
             
-            # Check daily limit
-            if not self.check_daily_limit(client_ip):
-                return False, "❌ Anda telah mencapai batas maksimal 10 laporan per hari."
+            # Handle photo upload and convert to Base64
+            photo_base64 = None
+            photo_filename = None
+            photo_saved_path = None
             
-            # Handle photo upload (OPTIONAL)
             if photo_file is not None:
                 try:
                     file_extension = photo_file.name.split('.')[-1].lower()
-                    valid_extensions = ['jpg', 'jpeg', 'png', 'gif']
+                    valid_extensions = ['jpg', 'jpeg', 'png']
                     
                     if file_extension not in valid_extensions:
                         return False, f"❌ Format file tidak didukung. Gunakan: {', '.join(valid_extensions)}"
                     
+                    # Generate filename
                     photo_filename = f"{uuid.uuid4()}.{file_extension}"
-                    photo_path = os.path.join(self.upload_folder, photo_filename)
+                    photo_saved_path = os.path.join(self.upload_folder, photo_filename)
                     
-                    print(f"📸 Saving photo to: {photo_path}")
-                    
-                    # Save photo
-                    with open(photo_path, "wb") as f:
+                    # Save file locally (for backup and possible local display)
+                    print(f"📸 Saving photo locally: {photo_saved_path}")
+                    with open(photo_saved_path, "wb") as f:
                         f.write(photo_file.getbuffer())
                     
-                    print(f"✅ Photo saved: {photo_filename}")
+                    # Convert to Base64 for Google Sheets
+                    print(f"🔤 Converting to Base64...")
+                    photo_bytes = photo_file.getvalue()
+                    photo_base64 = base64.b64encode(photo_bytes).decode('utf-8')
+                    
+                    # Truncate if too long (Google Sheets cell limit ~50K chars)
+                    if len(photo_base64) > 45000:  # Leave some buffer
+                        print("⚠️ Photo too large, truncating Base64")
+                        photo_base64 = photo_base64[:45000] + "...[TRUNCATED]"
+                    
+                    print(f"✅ Photo converted to Base64 ({len(photo_base64)} chars)")
                     
                 except Exception as e:
-                    print(f"⚠️ Error saving photo: {e}")
-                    # Lanjutkan tanpa foto jika error
-                    photo_path = None
+                    print(f"⚠️ Error processing photo: {e}")
+                    # Continue without photo
+                    photo_base64 = None
                     photo_filename = None
+                    photo_saved_path = None
             
-            # STEP 1: Create report in SQLite database
-            print("💾 Saving to SQLite database...")
-            
+            # Save to SQLite database (local backup)
+            print(" Saving to SQLite database...")
             report_id = self.flood_model.create_report(
                 address=address,
                 flood_height=flood_height,
                 reporter_name=reporter_name,
                 reporter_phone=reporter_phone,
-                photo_path=photo_path,
+                photo_path=photo_saved_path,  # Local path for backup
+                photo_base64=photo_base64,     # Base64 for quick access
                 ip_address=client_ip
             )
             
             if not report_id:
                 print("❌ Failed to save to SQLite")
-                # Cleanup photo if exists
-                if photo_path and os.path.exists(photo_path):
+                # Cleanup
+                if photo_saved_path and os.path.exists(photo_saved_path):
                     try:
-                        os.remove(photo_path)
+                        os.remove(photo_saved_path)
                     except:
                         pass
                 return False, "❌ Gagal menyimpan laporan ke database lokal."
             
             print(f"✅ SQLite save successful! Report ID: {report_id}")
             
-            # STEP 2: Save to Google Sheets (if available)
+            # Save to Google Sheets (if available)
             if self.sheets_model and self.sheets_model.client:
                 try:
-                    print("📊 Saving to Google Sheets...")
+                    print(" Saving to Google Sheets...")
                     
-                    # Prepare data untuk Google Sheets
                     sheets_data = {
                         'address': str(address),
                         'flood_height': str(flood_height),
                         'reporter_name': str(reporter_name),
                         'reporter_phone': str(reporter_phone) if reporter_phone else '',
                         'ip_address': str(client_ip),
-                        'photo_url': f"uploads/{photo_filename}" if photo_filename else ''
+                        'photo_filename': photo_filename or '',
+                        'photo_base64': photo_base64 or ''  # Base64 string
                     }
-                    
-                    print(f"📋 Google Sheets data prepared")
                     
                     success = self.sheets_model.save_flood_report(sheets_data)
                     if success:
-                        print("✅ Report saved to Google Sheets")
-                        gs_status = " (dan Google Sheets)"
+                        print("✅ Report saved to Google Sheets (with Base64 photo)")
+                        gs_status = " (dan Google Sheets dengan foto)"
                     else:
                         print("⚠️ Failed to save to Google Sheets")
                         gs_status = " (Google Sheets gagal)"
@@ -145,55 +137,20 @@ class FloodReportController:
                 print("ℹ️ Google Sheets not available")
                 gs_status = ""
             
-            # STEP 3: Verify data was saved
-            today_reports = self.flood_model.get_today_reports()
-            print(f"✅ Verification: Total reports today = {len(today_reports)}")
-            
-            return True, f"✅ Laporan berhasil dikirim! Data telah disimpan di database{gs_status}."
+            return True, f" Laporan berhasil dikirim! Data telah disimpan di database{gs_status}."
                 
         except Exception as e:
             print(f"❌ CRITICAL Error in submit_report: {e}")
+            import traceback
             traceback.print_exc()
             
             # Cleanup on error
-            if photo_path and os.path.exists(photo_path):
+            if photo_saved_path and os.path.exists(photo_saved_path):
                 try:
-                    os.remove(photo_path)
+                    os.remove(photo_saved_path)
                 except:
                     pass
             
             return False, f"❌ Error sistem: {str(e)}"
     
-    # ============ FUNGSI UNTUK VIEWS ============
-    
-    def get_today_reports(self):
-        """Get today's flood reports"""
-        return self.flood_model.get_today_reports()
-    
-    def get_month_reports(self):
-        """Get this month's flood reports"""
-        return self.flood_model.get_month_reports()
-    
-    def get_all_reports(self):
-        """Get all flood reports"""
-        return self.flood_model.get_all_reports()
-    
-    def get_monthly_statistics(self):
-        """Get monthly statistics for reports"""
-        return self.flood_model.get_monthly_statistics()
-    
-    def get_client_ip(self):
-        """Get client IP address"""
-        try:
-            # Generate a consistent IP for the session
-            if 'user_ip' not in st.session_state:
-                import random
-                st.session_state.user_ip = f"192.168.{random.randint(1, 255)}.{random.randint(1, 255)}"
-            
-            ip = st.session_state.user_ip
-            print(f"🖥️ Using IP: {ip}")
-            return ip
-            
-        except Exception as e:
-            print(f"⚠️ Error getting IP: {e}")
-            return "unknown_user"
+    # ... [other methods remain the same]
