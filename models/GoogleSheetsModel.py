@@ -1,12 +1,12 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import streamlit as st
 import os
 
 class GoogleSheetsModel:
     def __init__(self):
-        """Initialize Google Sheets connection hanya untuk TAB 1"""
+        """Initialize Google Sheets connection untuk semua tab"""
         self.client = None
         self.spreadsheet = None
         self.setup_connection()
@@ -75,18 +75,28 @@ class GoogleSheetsModel:
         except:
             return None
     
-    # ========== HANYA UNTUK TAB 1: flood_reports ==========
+    def get_wib_time(self):
+        """Get current time in WIB (UTC+7)"""
+        # Get UTC time
+        utc_now = datetime.now(timezone.utc)
+        # Convert to WIB (UTC+7)
+        wib_time = utc_now + timedelta(hours=7)
+        return wib_time
+    
+    # ========== UNTUK SEMUA TAB ==========
     
     def save_flood_report(self, report_data):
-        """Save flood report to Google Sheets TAB 1"""
+        """Save flood report to Google Sheets (TAB 1)"""
         try:
             ws = self.get_worksheet("flood_reports")
             if not ws:
                 print("❌ Worksheet 'flood_reports' not found")
                 return False
             
-            # Prepare data row
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Prepare data row with WIB time
+            wib_time = self.get_wib_time()
+            timestamp = wib_time.strftime("%Y-%m-%d %H:%M:%S")
+            
             row = [
                 timestamp,
                 report_data.get('address', ''),
@@ -100,8 +110,67 @@ class GoogleSheetsModel:
             
             # Append to sheet
             ws.append_row(row)
+            print(f"✅ Report saved to Google Sheets at {timestamp} WIB")
             return True
             
         except Exception as e:
-            print(f"❌ Error saving flood report: {e}")
+            print(f"❌ Error saving flood report to Google Sheets: {e}")
+            return False
+    
+    def save_daily_report(self, report_data):
+        """Save to daily reports worksheet"""
+        try:
+            ws = self.get_worksheet("daily_reports")
+            if not ws:
+                print("❌ Worksheet 'daily_reports' not found")
+                return False
+            
+            wib_time = self.get_wib_time()
+            timestamp = wib_time.strftime("%Y-%m-%d %H:%M:%S")
+            
+            row = [
+                timestamp,
+                report_data.get('address', ''),
+                report_data.get('flood_height', ''),
+                report_data.get('reporter_name', ''),
+                report_data.get('reporter_phone', ''),
+                report_data.get('ip_address', ''),
+                report_data.get('photo_url', '')
+            ]
+            
+            ws.append_row(row)
+            print(f"✅ Daily report saved to Google Sheets")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error saving daily report: {e}")
+            return False
+    
+    def save_monthly_report(self, report_data):
+        """Save to monthly reports worksheet"""
+        try:
+            ws = self.get_worksheet("monthly_reports")
+            if not ws:
+                print("❌ Worksheet 'monthly_reports' not found")
+                return False
+            
+            wib_time = self.get_wib_time()
+            timestamp = wib_time.strftime("%Y-%m-%d %H:%M:%S")
+            
+            row = [
+                timestamp,
+                report_data.get('address', ''),
+                report_data.get('flood_height', ''),
+                report_data.get('reporter_name', ''),
+                report_data.get('reporter_phone', ''),
+                report_data.get('ip_address', ''),
+                report_data.get('photo_url', '')
+            ]
+            
+            ws.append_row(row)
+            print(f"✅ Monthly report saved to Google Sheets")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error saving monthly report: {e}")
             return False
