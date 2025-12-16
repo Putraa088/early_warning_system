@@ -435,17 +435,37 @@ def show_homepage():
     
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     
-st.markdown("### Tentang Sistem")
-
-st.markdown(
-    """
-    <div class="feature-card">
-        <p>Sebagai platform berbasis teknologi, Sistem ini mengintegrasikan pemantauan real-time parameter hidrometeorologi dengan algoritma prediktif untuk mengidentifikasi risiko banjir secara dini. Tujuannya adalah memberdayakan masyarakat dan pihak terkait dengan informasi yang akurat dan tepat waktu, sehingga dapat mengambil langkah proaktif dalam kesiapsiagaan dan mitigasi untuk meminimalkan dampak banjir..</p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
+    st.markdown("### Tentang Sistem")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <p>Sebagai platform berbasis teknologi, Sistem Peringatan Dini Banjir ini mengintegrasikan pemantauan real-time parameter hidrometeorologi dengan algoritma prediktif untuk mengidentifikasi risiko banjir secara dini. Tujuannya adalah memberdayakan masyarakat dan pihak terkait dengan informasi yang akurat dan tepat waktu, sehingga dapat mengambil langkah proaktif dalam kesiapsiagaan dan mitigasi untuk meminimalkan dampak banjir..</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
+    with col2:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h3>ANALISIS STATISTIK</h3>
+                <p>Distribusi Gumbel untuk analisis nilai ekstrem dan perhitungan periode ulang banjir.</p>
+                <ul style="color: #dfe9ec; padding-left: 20px;">
+                    <li>Probabilitas kejadian ekstrem</li>
+                    <li>Periode ulang 5-50 tahun</li>
+                    <li>Risk assessment terstruktur</li>
+                    <li>Visualisasi data interaktif</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
 # ==================== KALKULATOR BANJIR PAGE ====================
 def show_flood_calculator_page():
     st.markdown(
@@ -822,8 +842,3 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
-
-
-
-
-
