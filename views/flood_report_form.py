@@ -32,15 +32,6 @@ def show_flood_report_form(controller):
                 help="Pilih kategori tinggi banjir",
                 index=0
             )
-            
-            # Ambil nilai numerik dari pilihan
-            flood_height = flood_options[flood_height_text]
-            
-            # Tampilkan nilai yang dipilih
-            if flood_height > 0:
-                st.info(f"Tinggi banjir: {flood_height} cm")
-            else:
-                st.warning("⚠️ Pilih tinggi banjir")
         
         with col2:
             reporter_name = st.text_input(
@@ -65,12 +56,6 @@ def show_flood_report_form(controller):
             help="Upload foto kejadian banjir (wajib diisi)"
         )
         
-        if photo_file:
-            st.image(photo_file, caption="Pratinjau Foto", width=300)
-            st.success("✅ Foto berhasil diupload")
-        else:
-            st.warning("⚠️ Harap upload foto kejadian")
-        
         # Terms and conditions
         st.markdown("---")
         agreed = st.checkbox(
@@ -92,23 +77,23 @@ def show_flood_report_form(controller):
             error_messages = []
             
             if not address or address.strip() == "":
-                error_messages.append("📍 Lokasi kejadian harus diisi")
+                error_messages.append(" Lokasi kejadian harus diisi")
             
             if flood_height <= 0:
-                error_messages.append("🌊 Pilih tinggi banjir")
+                error_messages.append(" Pilih tinggi banjir")
             
             if not reporter_name or reporter_name.strip() == "":
-                error_messages.append("👤 Nama pelapor harus diisi")
+                error_messages.append(" Nama pelapor harus diisi")
             
             # VALIDASI NOMOR TELEPON (WAJIB)
             if not reporter_phone or reporter_phone.strip() == "":
-                error_messages.append("📱 Nomor telepon harus diisi")
+                error_messages.append(" Nomor telepon harus diisi")
             elif not reporter_phone.strip().isdigit() or len(reporter_phone.strip()) < 10:
-                error_messages.append("📱 Nomor telepon harus angka minimal 10 digit")
+                error_messages.append(" Nomor telepon harus angka minimal 10 digit")
             
             # VALIDASI FOTO (WAJIB)
             if photo_file is None:
-                error_messages.append("📷 Foto kejadian wajib diupload")
+                error_messages.append(" Foto kejadian wajib diupload")
             
             if error_messages:
                 for error in error_messages:
@@ -130,3 +115,4 @@ def show_flood_report_form(controller):
                         st.rerun()
                     else:
                         st.error(message)
+
