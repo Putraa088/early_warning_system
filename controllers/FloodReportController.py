@@ -11,21 +11,19 @@ class FloodReportController:
         self.sheets_model = None
         self.upload_folder = "uploads"
         
-        # Initialize Google Sheets (with fallback)
+        # Initialize Google Sheets
         try:
             self.sheets_model = GoogleSheetsModel()
-            if self.sheets_model.client:
-                print("✅ Google Sheets model initialized successfully")
+            if self.sheets_model and self.sheets_model.client:
+                print("✅ Google Sheets CONNECTED successfully")
+                print(f"📊 Spreadsheet: {self.sheets_model.spreadsheet.title if self.sheets_model.spreadsheet else 'None'}")
             else:
-                print("⚠️ Google Sheets model created but not connected")
+                print("❌ Google Sheets model created but CLIENT is None")
+                print("ℹ️ Check: credentials, spreadsheet ID, or permissions")
         except Exception as e:
-            print(f"⚠️ Google Sheets initialization failed: {e}")
+            print(f"❌ Google Sheets initialization ERROR: {e}")
             self.sheets_model = None
-        
-        if not os.path.exists(self.upload_folder):
-            os.makedirs(self.upload_folder)
-            print(f"✅ Created upload folder: {self.upload_folder}")
-
+            
     def check_daily_limit(self, ip_address):
         """Check if daily limit (10 reports per IP) has been reached"""
         try:
@@ -240,3 +238,4 @@ class FloodReportController:
         except:
             # Fallback untuk development
             return "user_local_test"
+
