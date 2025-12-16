@@ -40,24 +40,28 @@ try:
     from controllers.VisitorController import VisitorController
     from controllers.FloodReportController import FloodReportController
     from controllers.RealTimeDataController import RealTimeDataController
+    print("✅ Semua controllers berhasil di-import")
 except Exception as e:
     st.error(f"Import Error Controller: {e}")
-
+    
+    # Fallback tanpa Google Sheets
     class VisitorController:
-        def track_visit(self, page):
-            return None
-        def get_visitor_stats(self):
-            return {}
-
+        def track_visit(self, page): return None
+        def get_visitor_stats(self): return {}
+    
     class FloodReportController:
         def submit_report(self, *args, **kwargs):
-            return False, "Fallback"
-        def get_today_reports(self):
-            return []
-
+            return False, "Sistem offline - Google Sheets tidak terhubung"
+        def get_today_reports(self): return []
+        def get_month_reports(self): return []
+        def get_all_reports(self): return []
+        def get_monthly_statistics(self): return {}
+        def get_client_ip(self): return "127.0.0.1"
+    
     class RealTimeDataController:
-        def get_comprehensive_data(self):
-            return []
+        def get_comprehensive_data(self): return []
+        def get_overall_risk_status(self, p): return "RENDAH", "green"
+        def is_same_location(self, l1, l2): return True
 
 # ==================== IMPORT MODEL PREDICTION ====================
 try:
