@@ -435,7 +435,7 @@ def show_homepage():
     
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     
-    st.markdown("### Fitur Utama Sistem")
+    st.markdown("### Tentang Sistem")
     
     col1, col2 = st.columns(2)
     
@@ -444,12 +444,8 @@ def show_homepage():
             """
             <div class="feature-card">
                 <h3>KECERDASAN BUATAN</h3>
-                <p>Prediksi real-time menggunakan neural network dengan analisis data historis untuk akurasi maksimal.</p>
+                <p>Sistem ini membantu memantau kondisi hujan dan ketinggian air untuk memberikan informasi awal mengenai potensi banjir. Data diperbarui secara berkala agar masyarakat dapat memperoleh informasi yang jelas dan terkini..</p>
                 <ul style="color: #dfe9ec; padding-left: 20px;">
-                    <li>Monitoring tinggi air otomatis</li>
-                    <li>Prediksi risiko berbasis AI</li>
-                    <li>Update data setiap 15 menit</li>
-                    <li>Peringatan dini real-time</li>
                 </ul>
             </div>
             """,
@@ -467,46 +463,6 @@ def show_homepage():
                     <li>Periode ulang 5-50 tahun</li>
                     <li>Risk assessment terstruktur</li>
                     <li>Visualisasi data interaktif</li>
-                </ul>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    
-    st.markdown("### Fitur Baru: Kalkulator Banjir")
-    
-    col3, col4 = st.columns(2)
-    
-    with col3:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h3>INPUT FLEKSIBEL</h3>
-                <p>Masukkan parameter cuaca sesuai kondisi lokasi Anda dengan input yang mudah.</p>
-                <ul style="color: #dfe9ec; padding-left: 20px;">
-                    <li>Curah hujan (0-500 mm)</li>
-                    <li>Tinggi air (60-150 mdpl)</li>
-                    <li>Kelembapan (0-100%)</li>
-                    <li>Suhu min & max</li>
-                </ul>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    
-    with col4:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h3>HASIL AKURAT</h3>
-                <p>Dapatkan prediksi risiko banjir berdasarkan kondisi spesifik di lokasi Anda.</p>
-                <ul style="color: #dfe9ec; padding-left: 20px;">
-                    <li>Status risiko jelas (RENDAH/MENENGAH/TINGGI)</li>
-                    <li>Rekomendasi tindakan spesifik</li>
-                    <li>Detail parameter lengkap</li>
-                    <li>Visualisasi risk level</li>
                 </ul>
             </div>
             """,
@@ -889,3 +845,4 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
+
