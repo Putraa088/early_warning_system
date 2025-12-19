@@ -23,66 +23,40 @@ for folder in ['controllers', 'models', 'views']:
     if os.path.exists(folder_path) and folder_path not in sys.path:
         sys.path.insert(0, folder_path)
 
-# ==================== STREAMLIT CLOUD DETECTION ====================
-IS_STREAMLIT_CLOUD = 'STREAMLIT_CLOUD' in os.environ
-
-# ==================== DATABASE PATH ====================
-if IS_STREAMLIT_CLOUD:
-    print("🌐 Running on Streamlit Cloud")
-    DB_PATH = '/mount/src/early_warning_system/flood_system.db'
-    UPLOADS_PATH = '/mount/src/early_warning_system/uploads'
-else:
-    print("💻 Running locally")
-    DB_PATH = 'flood_system.db'
-    UPLOADS_PATH = 'uploads'
-
-# Create uploads folder
-os.makedirs(UPLOADS_PATH, exist_ok=True)
-print(f"📁 Database path: {DB_PATH}")
-print(f"📁 Uploads path: {UPLOADS_PATH}")
-
 # ==================== DATABASE INITIALIZATION ====================
+DB_PATH = 'flood_system.db'
 print(f"🔍 Checking database at: {os.path.abspath(DB_PATH)}")
 
 if not os.path.exists(DB_PATH):
-    print("⚠️ Database belum diinisialisasi. Menjalankan init database...")
+    st.warning("⚠️ Database belum diinisialisasi. Menjalankan init database...")
     try:
+        # Coba inisialisasi database sederhana
         import sqlite3
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
+        # Buat tabel sederhana
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS flood_reports (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                "Timestamp" TEXT,
-                "Alamat" TEXT NOT NULL,
-                "Tinggi Banjir" TEXT NOT NULL,
-                "Nama Pelapor" TEXT NOT NULL,
-                "No HP" TEXT,
-                "IP Address" TEXT,
-                "Photo URL" TEXT,
-                "Status" TEXT DEFAULT 'pending',
-                report_date DATE,
-                report_time TIME,
+                timestamp TEXT NOT NULL,
+                address TEXT NOT NULL,
+                flood_height TEXT NOT NULL,
+                reporter_name TEXT NOT NULL,
+                reporter_phone TEXT,
+                photo_path TEXT,
+                ip_address TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         
         conn.commit()
         conn.close()
-        print("✅ Database berhasil diinisialisasi!")
+        st.success("✅ Database berhasil diinisialisasi!")
     except Exception as e:
-        print(f"❌ Gagal inisialisasi database: {e}")
+        st.error(f"❌ Gagal inisialisasi database: {e}")
 else:
     print(f"✅ Database found: {os.path.getsize(DB_PATH)} bytes")
-
-# ==================== STREAMLIT SECRETS CHECK ====================
-print("🔍 Checking Streamlit Secrets...")
-if 'GOOGLE_SHEETS' in st.secrets:
-    print("✅ Streamlit Secrets found for Google Sheets")
-else:
-    print("⚠️ Streamlit Secrets not found (Google Sheets will be offline)")
-    print("ℹ️ Add secrets in Streamlit Cloud dashboard")
 
 # ==================== IMPORT CONTROLLERS ====================
 try:
@@ -92,8 +66,6 @@ try:
     print("✅ Semua controllers berhasil di-import")
 except Exception as e:
     st.error(f"Import Error Controller: {e}")
-    print(f"❌ Import Error: {e}")
-    traceback.print_exc()
     
     # Fallback tanpa Google Sheets
     class VisitorController:
@@ -108,7 +80,6 @@ except Exception as e:
         def get_all_reports(self): return []
         def get_monthly_statistics(self): return {}
         def get_client_ip(self): return "127.0.0.1"
-        def check_daily_limit(self, ip): return True
     
     class RealTimeDataController:
         def get_comprehensive_data(self): return []
@@ -118,10 +89,7 @@ except Exception as e:
 # ==================== IMPORT MODEL PREDICTION ====================
 try:
     from model_ann import predict_flood_ann_with_temp_range
-    print("✅ model_ann imported successfully")
-except ImportError as e:
-    print(f"⚠️ ImportError model_ann: {e}")
-    
+except ImportError:
     def predict_flood_ann_with_temp_range(rainfall, water_level, humidity, temp_min, temp_max):
         """Fallback prediction function"""
         temp_avg = (temp_min + temp_max) / 2
@@ -150,10 +118,9 @@ try:
     from views.flood_reports_table import show_current_month_reports
     from views.monthly_reports import show_monthly_reports_summary
     from views.prediction_dashboard import show_prediction_dashboard
-    print("✅ Semua views berhasil di-import")
+    # Menghapus import untuk AI dan Statistical analysis
 except Exception as e:
-    print(f"❌ Import Error Views: {e}")
-    traceback.print_exc()
+    st.error(f"Import Error Views: {e}")
 
     def show_flood_report_form(*args, **kwargs):
         st.info("Report form not available")
@@ -373,15 +340,9 @@ h1,h2,h3{
 st.markdown(CSS_THEME, unsafe_allow_html=True)
 
 # ==================== INIT CONTROLLERS IN SESSION ====================
-# ==================== INIT CONTROLLERS IN SESSION ====================
 if 'controllers_initialized' not in st.session_state:
     try:
         print("🔄 Initializing controllers...")
-        
-        # Tunggu Streamlit session siap
-        import time
-        time.sleep(1)  # Beri waktu untuk session initialization
-        
         st.session_state.visitor_controller = VisitorController()
         st.session_state.flood_controller = FloodReportController()
         st.session_state.realtime_controller = RealTimeDataController()
@@ -663,6 +624,7 @@ def show_flood_calculator_page():
                     type="primary"
                 )
     
+    # ========== PREDIKSI TANPA GOOGLE SHEETS ==========
     if submitted:
         with st.spinner("Menganalisis data..."):
             time.sleep(0.8)
@@ -684,7 +646,7 @@ def show_flood_calculator_page():
                     temp_max=temp_max_val
                 )
                 
-                # TAMPILKAN HASIL
+                # TAMPILKAN HASIL DI WEBSITE
                 show_calculator_result(result, rainfall_val, water_level_val, 
                                     humidity_val, temp_min_val, temp_max_val)
                 
@@ -716,7 +678,7 @@ def show_flood_calculator_page():
                                     float(humidity), float(temp_min), float(temp_max))
 
 def show_calculator_result(result, rainfall, water_level, humidity, temp_min, temp_max):
-    """Tampilkan hasil kalkulator"""
+    """Tampilkan hasil kalkulator di website"""
     
     st.markdown("---")
     st.markdown("### HASIL PREDIKSI")
