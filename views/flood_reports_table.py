@@ -160,10 +160,9 @@ def format_time(time_string):
         
         if isinstance(time_string, str):
             if ':' in time_string:
-                return time_string[:5]  # HH:MM
+                return time_string[:5]  
             return time_string
         else:
             return str(time_string)
     except:
         return str(time_string) if time_string else ""
-
