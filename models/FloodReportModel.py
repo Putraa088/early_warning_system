@@ -2,11 +2,20 @@ import sqlite3
 from datetime import datetime
 import os
 import traceback
+import pytz
 
 class FloodReportModel:
-    def __init__(self, db_path='flood_system.db'):
+    def __init__(self, db_path=None):
+        # Gunakan path default atau custom
+        if not db_path:
+            db_path = 'flood_system.db'
+        
         self.db_path = db_path
         print(f"📂 Database path: {os.path.abspath(db_path)}")
+        
+        # Timezone untuk Indonesia (WIB)
+        self.tz_wib = pytz.timezone('Asia/Jakarta')
+        
         self.init_database()
     
     def get_connection(self):
@@ -20,30 +29,30 @@ class FloodReportModel:
             return None
     
     def init_database(self):
-        """Initialize database dengan struktur yang benar"""
+        """Initialize database dengan struktur baru"""
         try:
-            # Hapus database lama jika ada masalah
             if os.path.exists(self.db_path):
                 print(f"ℹ️ Database exists: {os.path.getsize(self.db_path)} bytes")
             
             conn = self.get_connection()
             if not conn:
-                # Buat database baru
                 conn = sqlite3.connect(self.db_path)
             
             cursor = conn.cursor()
             
-            # Buat tabel jika belum ada
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS flood_reports (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TEXT NOT NULL,
-                    address TEXT NOT NULL,
-                    flood_height TEXT NOT NULL,
-                    reporter_name TEXT NOT NULL,
-                    reporter_phone TEXT,
-                    photo_path TEXT,
-                    ip_address TEXT,
+                    "Timestamp" TEXT,
+                    "Alamat" TEXT NOT NULL,
+                    "Tinggi Banjir" TEXT NOT NULL,
+                    "Nama Pelapor" TEXT NOT NULL,
+                    "No HP" TEXT,
+                    "IP Address" TEXT,
+                    "Photo URL" TEXT,
+                    "Status" TEXT DEFAULT 'pending',
+                    report_date DATE,
+                    report_time TIME,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
@@ -55,9 +64,6 @@ class FloodReportModel:
             columns = cursor.fetchall()
             print(f"✅ Table 'flood_reports' ready with {len(columns)} columns")
             
-            for col in columns:
-                print(f"  - {col[1]} ({col[2]})")
-            
             conn.close()
             return True
             
@@ -66,21 +72,20 @@ class FloodReportModel:
             traceback.print_exc()
             return False
     
-    def create_report(self, address, flood_height, reporter_name, 
-                      reporter_phone=None, photo_path=None, ip_address=None):
-        """Create new flood report"""
+    def create_report(self, alamat, tinggi_banjir, nama_pelapor, 
+                      no_hp=None, photo_url=None, ip_address=None):
+        """Create new flood report dengan waktu WIB"""
         try:
-            current_time = datetime.now()
-            timestamp = current_time.strftime("%Y-%m-%d %H:%M:%S")
+            current_time_wib = datetime.now(self.tz_wib)
+            timestamp = current_time_wib.strftime("%Y-%m-%d %H:%M:%S")
+            report_date = current_time_wib.strftime("%Y-%m-%d")
+            report_time = current_time_wib.strftime("%H:%M:%S")
             
-            print(f"📝 Creating report:")
-            print(f"  Address: {address}")
-            print(f"  Height: {flood_height}")
-            print(f"  Name: {reporter_name}")
-            print(f"  Phone: {reporter_phone}")
-            print(f"  Photo: {photo_path}")
-            print(f"  IP: {ip_address}")
-            print(f"  Time: {timestamp}")
+            print(f"📝 Creating report (WIB Time):")
+            print(f"  Timestamp: {timestamp}")
+            print(f"  Alamat: {alamat}")
+            print(f"  Tinggi Banjir: {tinggi_banjir}")
+            print(f"  Nama Pelapor: {nama_pelapor}")
             
             conn = self.get_connection()
             if not conn:
@@ -89,27 +94,29 @@ class FloodReportModel:
             
             cursor = conn.cursor()
             
-            # INSERT data
             cursor.execute('''
                 INSERT INTO flood_reports 
-                (timestamp, address, flood_height, reporter_name, reporter_phone, 
-                 photo_path, ip_address)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ("Timestamp", "Alamat", "Tinggi Banjir", "Nama Pelapor", 
+                 "No HP", "IP Address", "Photo URL", "Status",
+                 report_date, report_time)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 timestamp,
-                str(address) if address else "",
-                str(flood_height) if flood_height else "",
-                str(reporter_name) if reporter_name else "",
-                str(reporter_phone) if reporter_phone else None,
-                str(photo_path) if photo_path else None,
-                str(ip_address) if ip_address else "unknown"
+                str(alamat) if alamat else "",
+                str(tinggi_banjir) if tinggi_banjir else "",
+                str(nama_pelapor) if nama_pelapor else "",
+                str(no_hp) if no_hp else None,
+                str(ip_address) if ip_address else "unknown",
+                str(photo_url) if photo_url else None,
+                'pending',
+                report_date,
+                report_time
             ))
             
             conn.commit()
             last_id = cursor.lastrowid
             print(f"✅ Report created with ID: {last_id}")
             
-            # Verifikasi
             cursor.execute('SELECT COUNT(*) FROM flood_reports')
             count = cursor.fetchone()[0]
             print(f"✅ Total reports in database: {count}")
@@ -125,7 +132,7 @@ class FloodReportModel:
     def get_today_reports_count_by_ip(self, ip_address):
         """Count today's reports by IP address"""
         try:
-            today = datetime.now().strftime("%Y-%m-%d")
+            today = datetime.now(self.tz_wib).strftime("%Y-%m-%d")
             
             conn = self.get_connection()
             if not conn:
@@ -134,7 +141,7 @@ class FloodReportModel:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT COUNT(*) FROM flood_reports 
-                WHERE ip_address = ? AND DATE(timestamp) = ?
+                WHERE "IP Address" = ? AND report_date = ?
             ''', (ip_address, today))
             
             count = cursor.fetchone()[0]
@@ -150,7 +157,7 @@ class FloodReportModel:
     def get_today_reports(self):
         """Get today's reports"""
         try:
-            today = datetime.now().strftime("%Y-%m-%d")
+            today = datetime.now(self.tz_wib).strftime("%Y-%m-%d")
             
             conn = self.get_connection()
             if not conn:
@@ -159,8 +166,8 @@ class FloodReportModel:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT * FROM flood_reports 
-                WHERE DATE(timestamp) = ?
-                ORDER BY timestamp DESC
+                WHERE report_date = ?
+                ORDER BY "Timestamp" DESC
             ''', (today,))
             
             rows = cursor.fetchall()
@@ -168,26 +175,18 @@ class FloodReportModel:
             
             reports = []
             for row in rows:
-                # Parse timestamp untuk report_date dan report_time
-                try:
-                    timestamp = datetime.strptime(row['timestamp'], '%Y-%m-%d %H:%M:%S')
-                    report_date = timestamp.strftime('%Y-%m-%d')
-                    report_time = timestamp.strftime('%H:%M:%S')
-                except:
-                    report_date = row['timestamp'][:10] if row['timestamp'] else "N/A"
-                    report_time = row['timestamp'][11:19] if row['timestamp'] and len(row['timestamp']) > 11 else "N/A"
-                
                 reports.append({
                     'id': row['id'],
-                    'address': row['address'],
-                    'flood_height': row['flood_height'],
-                    'reporter_name': row['reporter_name'],
-                    'reporter_phone': row['reporter_phone'],
-                    'photo_path': row['photo_path'],
-                    'ip_address': row['ip_address'],
-                    'report_date': report_date,
-                    'report_time': report_time,
-                    'timestamp': row['timestamp']
+                    'Timestamp': row['Timestamp'],
+                    'Alamat': row['Alamat'],
+                    'Tinggi Banjir': row['Tinggi Banjir'],
+                    'Nama Pelapor': row['Nama Pelapor'],
+                    'No HP': row['No HP'],
+                    'IP Address': row['IP Address'],
+                    'Photo URL': row['Photo URL'],
+                    'Status': row['Status'],
+                    'report_date': row['report_date'],
+                    'report_time': row['report_time']
                 })
             
             print(f"📊 Today's reports: {len(reports)}")
@@ -200,7 +199,7 @@ class FloodReportModel:
     def get_month_reports(self):
         """Get this month's reports"""
         try:
-            current_month = datetime.now().strftime("%Y-%m")
+            current_month = datetime.now(self.tz_wib).strftime("%Y-%m")
             
             conn = self.get_connection()
             if not conn:
@@ -209,8 +208,8 @@ class FloodReportModel:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT * FROM flood_reports 
-                WHERE strftime('%Y-%m', timestamp) = ?
-                ORDER BY timestamp DESC
+                WHERE strftime('%Y-%m', report_date) = ?
+                ORDER BY "Timestamp" DESC
             ''', (current_month,))
             
             rows = cursor.fetchall()
@@ -218,26 +217,18 @@ class FloodReportModel:
             
             reports = []
             for row in rows:
-                # Parse timestamp untuk report_date dan report_time
-                try:
-                    timestamp = datetime.strptime(row['timestamp'], '%Y-%m-%d %H:%M:%S')
-                    report_date = timestamp.strftime('%Y-%m-%d')
-                    report_time = timestamp.strftime('%H:%M:%S')
-                except:
-                    report_date = row['timestamp'][:10] if row['timestamp'] else "N/A"
-                    report_time = row['timestamp'][11:19] if row['timestamp'] and len(row['timestamp']) > 11 else "N/A"
-                
                 reports.append({
                     'id': row['id'],
-                    'address': row['address'],
-                    'flood_height': row['flood_height'],
-                    'reporter_name': row['reporter_name'],
-                    'reporter_phone': row['reporter_phone'],
-                    'photo_path': row['photo_path'],
-                    'ip_address': row['ip_address'],
-                    'report_date': report_date,
-                    'report_time': report_time,
-                    'timestamp': row['timestamp']
+                    'Timestamp': row['Timestamp'],
+                    'Alamat': row['Alamat'],
+                    'Tinggi Banjir': row['Tinggi Banjir'],
+                    'Nama Pelapor': row['Nama Pelapor'],
+                    'No HP': row['No HP'],
+                    'IP Address': row['IP Address'],
+                    'Photo URL': row['Photo URL'],
+                    'Status': row['Status'],
+                    'report_date': row['report_date'],
+                    'report_time': row['report_time']
                 })
             
             print(f"📊 Month's reports: {len(reports)}")
@@ -255,7 +246,7 @@ class FloodReportModel:
                 return []
             
             cursor = conn.cursor()
-            cursor.execute('SELECT * FROM flood_reports ORDER BY timestamp DESC')
+            cursor.execute('SELECT * FROM flood_reports ORDER BY "Timestamp" DESC')
             
             rows = cursor.fetchall()
             conn.close()
@@ -264,13 +255,16 @@ class FloodReportModel:
             for row in rows:
                 reports.append({
                     'id': row['id'],
-                    'address': row['address'],
-                    'flood_height': row['flood_height'],
-                    'reporter_name': row['reporter_name'],
-                    'reporter_phone': row['reporter_phone'],
-                    'photo_path': row['photo_path'],
-                    'ip_address': row['ip_address'],
-                    'timestamp': row['timestamp']
+                    'Timestamp': row['Timestamp'],
+                    'Alamat': row['Alamat'],
+                    'Tinggi Banjir': row['Tinggi Banjir'],
+                    'Nama Pelapor': row['Nama Pelapor'],
+                    'No HP': row['No HP'],
+                    'IP Address': row['IP Address'],
+                    'Photo URL': row['Photo URL'],
+                    'Status': row['Status'],
+                    'report_date': row['report_date'],
+                    'report_time': row['report_time']
                 })
             
             return reports
@@ -282,7 +276,7 @@ class FloodReportModel:
     def get_monthly_statistics(self):
         """Get monthly statistics"""
         try:
-            current_month = datetime.now().strftime("%Y-%m")
+            current_month = datetime.now(self.tz_wib).strftime("%Y-%m")
             
             conn = self.get_connection()
             if not conn:
@@ -291,7 +285,7 @@ class FloodReportModel:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT COUNT(*) FROM flood_reports 
-                WHERE strftime('%Y-%m', timestamp) = ?
+                WHERE strftime('%Y-%m', report_date) = ?
             ''', (current_month,))
             
             total = cursor.fetchone()[0]
