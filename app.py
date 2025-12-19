@@ -4,6 +4,7 @@ import sys
 import os
 import traceback
 import time
+import tempfile
 
 # ==================== CONFIG ====================
 st.set_page_config(
@@ -23,29 +24,46 @@ for folder in ['controllers', 'models', 'views']:
     if os.path.exists(folder_path) and folder_path not in sys.path:
         sys.path.insert(0, folder_path)
 
+# ==================== STREAMLIT CLOUD DETECTION ====================
+IS_STREAMLIT_CLOUD = 'STREAMLIT_CLOUD' in os.environ
+
+if IS_STREAMLIT_CLOUD:
+    print("🌐 Running on Streamlit Cloud")
+    DB_PATH = '/mount/src/early_warning_system/flood_system.db'
+    UPLOADS_PATH = '/mount/src/early_warning_system/uploads'
+else:
+    print("💻 Running locally")
+    DB_PATH = 'flood_system.db'
+    UPLOADS_PATH = 'uploads'
+
+# Create uploads folder
+os.makedirs(UPLOADS_PATH, exist_ok=True)
+print(f"📁 Database path: {DB_PATH}")
+print(f"📁 Uploads path: {UPLOADS_PATH}")
+
 # ==================== DATABASE INITIALIZATION ====================
-DB_PATH = 'flood_system.db'
 print(f"🔍 Checking database at: {os.path.abspath(DB_PATH)}")
 
 if not os.path.exists(DB_PATH):
     st.warning("⚠️ Database belum diinisialisasi. Menjalankan init database...")
     try:
-        # Coba inisialisasi database sederhana
         import sqlite3
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        # Buat tabel sederhana
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS flood_reports (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT NOT NULL,
-                address TEXT NOT NULL,
-                flood_height TEXT NOT NULL,
-                reporter_name TEXT NOT NULL,
-                reporter_phone TEXT,
-                photo_path TEXT,
-                ip_address TEXT,
+                "Timestamp" TEXT,
+                "Alamat" TEXT NOT NULL,
+                "Tinggi Banjir" TEXT NOT NULL,
+                "Nama Pelapor" TEXT NOT NULL,
+                "No HP" TEXT,
+                "IP Address" TEXT,
+                "Photo URL" TEXT,
+                "Status" TEXT DEFAULT 'pending',
+                report_date DATE,
+                report_time TIME,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
@@ -58,59 +76,116 @@ if not os.path.exists(DB_PATH):
 else:
     print(f"✅ Database found: {os.path.getsize(DB_PATH)} bytes")
 
-# ==================== IMPORT CONTROLLERS ====================
+# ==================== STREAMLIT SECRETS CHECK ====================
+print("🔍 Checking Streamlit Secrets...")
+if 'GOOGLE_SHEETS' in st.secrets:
+    print("✅ Streamlit Secrets found")
+    print(f"   Project: {st.secrets['GOOGLE_SHEETS'].get('project_id', 'N/A')}")
+else:
+    print("⚠️ Streamlit Secrets not found (Google Sheets will be offline)")
+    print("ℹ️ Add secrets in Streamlit Cloud dashboard")
+
+# ==================== IMPORT CONTROLLERS (WITH FALLBACK) ====================
+print("\n🔄 Importing controllers...")
+
+# Define fallback controllers FIRST
+class FallbackVisitorController:
+    def track_visit(self, page=''): 
+        print(f"⚠️ Fallback: track_visit({page})")
+        return True
+    def get_visitor_stats(self):
+        return {'today': 0, 'month': 0, 'online': 0, 'popular_pages': []}
+
+class FallbackFloodReportController:
+    def __init__(self):
+        print("⚠️ Using FALLBACK FloodReportController")
+        self.flood_model = None
+        self.sheets_model = None
+        self.drive_model = None
+    
+    # Form submission
+    def submit_report(self, address, flood_height, reporter_name, reporter_phone=None, photo_file=None):
+        print(f"⚠️ Fallback: submit_report({address})")
+        return False, "❌ Sistem sedang dalam maintenance"
+    
+    # REPORT METHODS (WAJIB ADA UNTUK VIEWS)
+    def get_today_reports(self):
+        print("⚠️ Fallback: get_today_reports()")
+        return []
+    
+    def get_month_reports(self):
+        print("⚠️ Fallback: get_month_reports()")
+        return []
+    
+    def get_all_reports(self):
+        print("⚠️ Fallback: get_all_reports()")
+        return []
+    
+    def get_monthly_statistics(self):
+        print("⚠️ Fallback: get_monthly_statistics()")
+        return {'total_reports': 0, 'month': ''}
+    
+    def get_client_ip(self):
+        return "127.0.0.1"
+    
+    def check_daily_limit(self, ip_address):
+        return True
+    
+    def is_google_sheets_available(self):
+        return False
+    
+    def is_google_drive_available(self):
+        return False
+
+class FallbackRealTimeDataController:
+    def get_comprehensive_data(self):
+        print("⚠️ Fallback: get_comprehensive_data()")
+        return []
+    def get_overall_risk_status(self, p):
+        return "RENDAH", "green"
+    def is_same_location(self, l1, l2):
+        return True
+
+# Try to import real controllers
 try:
+    print("🔄 Attempting to import real controllers...")
     from controllers.VisitorController import VisitorController
     from controllers.FloodReportController import FloodReportController
     from controllers.RealTimeDataController import RealTimeDataController
+    
     print("✅ Semua controllers berhasil di-import")
+    
+    # Use real controllers
+    visitor_controller_class = VisitorController
+    flood_controller_class = FloodReportController
+    realtime_controller_class = RealTimeDataController
+    
 except ImportError as e:
-    st.error(f"Import Error Controller: {e}")
-    print(f"❌ Import error details: {e}")
+    print(f"❌ Import Error Controller: {e}")
+    print("⚠️ Using fallback controllers")
     
-    # Create fallback controllers
-    class VisitorController:
-        def track_visit(self, page): return None
-        def get_visitor_stats(self): return {'today': 0, 'month': 0, 'online': 0, 'popular_pages': []}
+    # Use fallback controllers
+    visitor_controller_class = FallbackVisitorController
+    flood_controller_class = FallbackFloodReportController
+    realtime_controller_class = FallbackRealTimeDataController
+
+except Exception as e:
+    print(f"❌ Unexpected error importing controllers: {e}")
+    print("⚠️ Using fallback controllers")
     
-    class FloodReportController:
-        def __init__(self):
-            print("⚠️ Using fallback FloodReportController")
-        
-        def submit_report(self, *args, **kwargs):
-            return False, "Sistem offline - Controller tidak tersedia"
-        
-        # TAMBAHKAN METHOD YANG DIBUTUHKAN
-        def get_today_reports(self): 
-            print("⚠️ Fallback: get_today_reports()")
-            return []
-        
-        def get_month_reports(self): 
-            print("⚠️ Fallback: get_month_reports()")
-            return []
-        
-        def get_all_reports(self): 
-            print("⚠️ Fallback: get_all_reports()")
-            return []
-        
-        def get_monthly_statistics(self): 
-            print("⚠️ Fallback: get_monthly_statistics()")
-            return {}
-        
-        def get_client_ip(self): 
-            return "127.0.0.1"
-    
-    class RealTimeDataController:
-        def get_comprehensive_data(self): return []
-        def get_overall_risk_status(self, p): return "RENDAH", "green"
-        def is_same_location(self, l1, l2): return True
+    visitor_controller_class = FallbackVisitorController
+    flood_controller_class = FallbackFloodReportController
+    realtime_controller_class = FallbackRealTimeDataController
 
 # ==================== IMPORT MODEL PREDICTION ====================
 try:
     from model_ann import predict_flood_ann_with_temp_range
-except ImportError:
+    print("✅ model_ann imported successfully")
+except ImportError as e:
+    print(f"⚠️ ImportError model_ann: {e}")
+    
+    # Fallback prediction function
     def predict_flood_ann_with_temp_range(rainfall, water_level, humidity, temp_min, temp_max):
-        """Fallback prediction function"""
         temp_avg = (temp_min + temp_max) / 2
         risk = min(1.0, (rainfall / 300) * 0.5 + (water_level / 150) * 0.3 + (humidity / 100) * 0.15 + ((temp_avg - 20) / 20) * 0.05)
         
@@ -130,28 +205,54 @@ except ImportError:
             'message': message,
             'temperature_range': {'min': temp_min, 'max': temp_max, 'average': temp_avg}
         }
+    
+    print("⚠️ Using fallback prediction function")
 
 # ==================== IMPORT VIEWS ====================
+print("\n🔄 Importing views...")
+
+# Define fallback views FIRST
+def fallback_show_flood_report_form(controller):
+    st.error("❌ Form laporan tidak tersedia")
+    st.info("Sistem sedang dalam maintenance. Silakan coba lagi nanti.")
+
+def fallback_show_current_month_reports(controller):
+    st.error("❌ Laporan tidak tersedia")
+    st.info("Tidak dapat mengakses data laporan saat ini.")
+
+def fallback_show_monthly_reports_summary(controller):
+    st.error("❌ Rekapan bulanan tidak tersedia")
+    st.info("Tidak dapat mengakses data rekapan saat ini.")
+
+def fallback_show_prediction_dashboard(controller):
+    st.error("❌ Dashboard prediksi tidak tersedia")
+    st.info("Sistem prediksi sedang offline.")
+
+# Try to import real views
 try:
     from views.flood_report_form import show_flood_report_form
     from views.flood_reports_table import show_current_month_reports
     from views.monthly_reports import show_monthly_reports_summary
     from views.prediction_dashboard import show_prediction_dashboard
-    # Menghapus import untuk AI dan Statistical analysis
+    
+    print("✅ Semua views berhasil di-import")
+    
+except ImportError as e:
+    print(f"❌ Import Error Views: {e}")
+    
+    # Use fallback views
+    show_flood_report_form = fallback_show_flood_report_form
+    show_current_month_reports = fallback_show_current_month_reports
+    show_monthly_reports_summary = fallback_show_monthly_reports_summary
+    show_prediction_dashboard = fallback_show_prediction_dashboard
+
 except Exception as e:
-    st.error(f"Import Error Views: {e}")
-
-    def show_flood_report_form(*args, **kwargs):
-        st.info("Report form not available")
-
-    def show_current_month_reports(*args, **kwargs):
-        st.info("Reports not available")
-
-    def show_monthly_reports_summary(*args, **kwargs):
-        st.info("Monthly reports not available")
-
-    def show_prediction_dashboard(*args, **kwargs):
-        st.info("Prediction dashboard not available")
+    print(f"❌ Unexpected error importing views: {e}")
+    
+    show_flood_report_form = fallback_show_flood_report_form
+    show_current_month_reports = fallback_show_current_month_reports
+    show_monthly_reports_summary = fallback_show_monthly_reports_summary
+    show_prediction_dashboard = fallback_show_prediction_dashboard
 
 # ==================== CSS THEME ====================
 CSS_THEME = r"""
@@ -361,26 +462,31 @@ st.markdown(CSS_THEME, unsafe_allow_html=True)
 # ==================== INIT CONTROLLERS IN SESSION ====================
 if 'controllers_initialized' not in st.session_state:
     try:
-        print("🔄 Initializing controllers...")
-        st.session_state.visitor_controller = VisitorController()
-        st.session_state.flood_controller = FloodReportController()
-        st.session_state.realtime_controller = RealTimeDataController()
+        print("\n🔄 Initializing controllers in session...")
+        
+        # Initialize controllers
+        st.session_state.visitor_controller = visitor_controller_class()
+        st.session_state.flood_controller = flood_controller_class()
+        st.session_state.realtime_controller = realtime_controller_class()
+        
         st.session_state.controllers_initialized = True
         print("✅ All controllers initialized successfully")
+        
     except Exception as e:
         print(f"❌ Error initializing controllers: {e}")
         import traceback
         traceback.print_exc()
-        st.session_state.controllers_initialized = False
+        
+        # Use fallback controllers
+        st.session_state.visitor_controller = FallbackVisitorController()
+        st.session_state.flood_controller = FallbackFloodReportController()
+        st.session_state.realtime_controller = FallbackRealTimeDataController()
+        st.session_state.controllers_initialized = True
 
-if st.session_state.controllers_initialized:
-    visitor_controller = st.session_state.visitor_controller
-    flood_controller = st.session_state.flood_controller
-    realtime_controller = st.session_state.realtime_controller
-else:
-    visitor_controller = VisitorController()
-    flood_controller = FloodReportController()
-    realtime_controller = RealTimeDataController()
+# Get controllers from session state
+visitor_controller = st.session_state.visitor_controller
+flood_controller = st.session_state.flood_controller
+realtime_controller = st.session_state.realtime_controller
 
 # ==================== SIDEBAR NAVIGATION ====================
 def setup_sidebar():
@@ -400,12 +506,12 @@ def setup_sidebar():
             st.session_state.current_page = "Home"
 
         menu_items = [
-            ("Home", "Home"),
-            ("Lapor Banjir", "Lapor Banjir"),
-            ("Laporan Harian", "Laporan Harian"),
-            ("Rekapan Bulanan", "Rekapan Bulanan"),
-            ("Prediksi Real-time", "Prediksi Banjir"),
-            ("Kalkulator Banjir", "Kalkulator Banjir")
+            (" Home", "Home"),
+            (" Lapor Banjir", "Lapor Banjir"),
+            (" Laporan Harian", "Laporan Harian"),
+            (" Rekapan Bulanan", "Rekapan Bulanan"),
+            (" Prediksi Real-time", "Prediksi Banjir"),
+            (" Kalkulator Banjir", "Kalkulator Banjir")
         ]
 
         st.markdown('<div style="margin: 10px 0;">', unsafe_allow_html=True)
@@ -418,21 +524,21 @@ def setup_sidebar():
         
         st.markdown('</div>', unsafe_allow_html=True)
         
-        st.markdown("### Kontak")
+        st.markdown("###  Kontak Kami:")
         
         with st.container():
-            st.markdown("**LOKASI**")
+            st.markdown("** LOKASI**")
             st.markdown("Jl. Diponegoro No. 52-58")
             st.markdown("Salatiga, Jawa Tengah")
             
             st.markdown("---")
             
-            st.markdown("**EMAIL**")
+            st.markdown("** EMAIL**")
             st.markdown("tyarawahyusaputra@gmail.com")
             
             st.markdown("---")
             
-            st.markdown("**TELEPON**")
+            st.markdown("** TELEPON**")
             st.markdown("085156959561")
 
 # ==================== HOME PAGE ====================
@@ -454,7 +560,7 @@ def show_homepage():
     
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     
-    st.markdown("### Fitur Utama Sistem")
+    st.markdown("###  Fitur Utama Sistem")
     
     col1, col2 = st.columns(2)
     
@@ -462,7 +568,7 @@ def show_homepage():
         st.markdown(
             """
             <div class="feature-card">
-                <h3>KECERDASAN BUATAN</h3>
+                <h3>🤖 KECERDASAN BUATAN</h3>
                 <p>Prediksi real-time menggunakan neural network dengan analisis data historis untuk akurasi maksimal.</p>
                 <ul style="color: #dfe9ec; padding-left: 20px;">
                     <li>Monitoring tinggi air otomatis</li>
@@ -479,7 +585,7 @@ def show_homepage():
         st.markdown(
             """
             <div class="feature-card">
-                <h3>ANALISIS STATISTIK</h3>
+                <h3>📊 ANALISIS STATISTIK</h3>
                 <p>Distribusi Gumbel untuk analisis nilai ekstrem dan perhitungan periode ulang banjir.</p>
                 <ul style="color: #dfe9ec; padding-left: 20px;">
                     <li>Probabilitas kejadian ekstrem</li>
@@ -494,50 +600,13 @@ def show_homepage():
     
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     
-    st.markdown("### Fitur Baru: Kalkulator Banjir")
-    
-    col3, col4 = st.columns(2)
-    
-    with col3:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h3>INPUT FLEKSIBEL</h3>
-                <p>Masukkan parameter cuaca sesuai kondisi lokasi Anda dengan input yang mudah.</p>
-                <ul style="color: #dfe9ec; padding-left: 20px;">
-                    <li>Curah hujan (0-500 mm)</li>
-                    <li>Tinggi air (60-150 mdpl)</li>
-                    <li>Kelembapan (0-100%)</li>
-                    <li>Suhu min & max</li>
-                </ul>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    
-    with col4:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h3>HASIL AKURAT</h3>
-                <p>Dapatkan prediksi risiko banjir berdasarkan kondisi spesifik di lokasi Anda.</p>
-                <ul style="color: #dfe9ec; padding-left: 20px;">
-                    <li>Status risiko jelas (RENDAH/MENENGAH/TINGGI)</li>
-                    <li>Rekomendasi tindakan spesifik</li>
-                    <li>Detail parameter lengkap</li>
-                    <li>Visualisasi risk level</li>
-                </ul>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
 
 # ==================== KALKULATOR BANJIR PAGE ====================
 def show_flood_calculator_page():
     st.markdown(
         """
         <div class="prediction-header">
-            <h1 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 800;">Kalkulator Banjir</h1>
+            <h1 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 800;">🧮 Kalkulator Banjir</h1>
             <p style="color: #dfe9ec !important; font-size: 1.2rem; font-weight: 400;">
                 Masukkan parameter cuaca untuk mendapatkan prediksi risiko banjir yang akurat
             </p>
@@ -547,14 +616,14 @@ def show_flood_calculator_page():
     )
     
     with st.container():
-        st.markdown("### Parameter Cuaca")
+        st.markdown("###  Parameter Cuaca")
         
         with st.form("flood_calculator_form", clear_on_submit=False):
             
             col1, col2 = st.columns(2)
             
             with col1:
-                st.markdown("#### Curah Hujan")
+                st.markdown("####  Curah Hujan")
                 rainfall = st.number_input(
                     "Curah Hujan (mm)",
                     min_value=0.0,
@@ -568,7 +637,7 @@ def show_flood_calculator_page():
                 st.caption(f"Nilai: {rainfall:.2f} mm")
             
             with col2:
-                st.markdown("#### Tinggi Air")
+                st.markdown("####  Tinggi Air")
                 water_level = st.number_input(
                     "Tinggi Air (mdpl)",
                     min_value=60.0,
@@ -586,7 +655,7 @@ def show_flood_calculator_page():
             col3, col4 = st.columns(2)
             
             with col3:
-                st.markdown("#### Kelembapan")
+                st.markdown("####  Kelembapan")
                 humidity = st.number_input(
                     "Kelembapan (%)",
                     min_value=0.0,
@@ -600,7 +669,7 @@ def show_flood_calculator_page():
                 st.caption(f"Nilai: {humidity:.2f}%")
             
             with col4:
-                st.markdown("#### Suhu Harian")
+                st.markdown("####  Suhu Harian")
                 
                 temp_col1, temp_col2 = st.columns(2)
                 
@@ -638,25 +707,22 @@ def show_flood_calculator_page():
             submit_col1, submit_col2, submit_col3 = st.columns([1, 2, 1])
             with submit_col2:
                 submitted = st.form_submit_button(
-                    "PREDIKSI SEKARANG",
+                    " PREDIKSI SEKARANG",
                     use_container_width=True,
                     type="primary"
                 )
     
-    # ========== PREDIKSI TANPA GOOGLE SHEETS ==========
     if submitted:
         with st.spinner("Menganalisis data..."):
             time.sleep(0.8)
             
             try:
-                # Konversi ke float
                 rainfall_val = float(rainfall)
                 water_level_val = float(water_level)
                 humidity_val = float(humidity)
                 temp_min_val = float(temp_min)
                 temp_max_val = float(temp_max)
                 
-                # Dapatkan prediksi
                 result = predict_flood_ann_with_temp_range(
                     rainfall=rainfall_val,
                     water_level=water_level_val,
@@ -665,14 +731,12 @@ def show_flood_calculator_page():
                     temp_max=temp_max_val
                 )
                 
-                # TAMPILKAN HASIL DI WEBSITE
                 show_calculator_result(result, rainfall_val, water_level_val, 
                                     humidity_val, temp_min_val, temp_max_val)
                 
             except Exception as e:
                 st.error(f"Error dalam prediksi: {str(e)}")
                 
-                # Fallback prediction sederhana
                 temp_avg = (float(temp_min) + float(temp_max)) / 2
                 simple_risk = min(1.0, (float(rainfall) / 300) * 0.6 + (float(water_level) / 150) * 0.25 + (float(humidity) / 100) * 0.15)
                 
@@ -697,10 +761,10 @@ def show_flood_calculator_page():
                                     float(humidity), float(temp_min), float(temp_max))
 
 def show_calculator_result(result, rainfall, water_level, humidity, temp_min, temp_max):
-    """Tampilkan hasil kalkulator di website"""
+    """Tampilkan hasil kalkulator"""
     
     st.markdown("---")
-    st.markdown("### HASIL PREDIKSI")
+    st.markdown("###  HASIL PREDIKSI")
     st.caption("Berdasarkan parameter yang dimasukkan")
     
     status_colors = {
@@ -712,21 +776,18 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
     risk_color = status_colors.get(result['status'], '#6b7280')
     risk_level = result.get('risk_level', 0.0)
     
-    # Header status
     st.markdown(f"""
     <h1 style="color: {risk_color}; text-align: center; margin: 20px 0; font-size: 2.5rem;">
         {result['status']}
     </h1>
     """, unsafe_allow_html=True)
     
-    # Risk level
     st.markdown(f"""
     <div style="text-align: center; font-size: 1.2rem; color: #dfe9ec; margin-bottom: 20px;">
         Risk Level: <strong>{risk_level:.3f}</strong>
     </div>
     """, unsafe_allow_html=True)
     
-    # Message box
     with st.container():
         st.markdown(f"""
         <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 15px; margin: 20px 0;">
@@ -736,7 +797,6 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
         </div>
         """, unsafe_allow_html=True)
     
-    # Progress bar
     st.markdown("**Tingkat Risiko:**")
     progress_col1, progress_col2 = st.columns([4, 1])
     with progress_col1:
@@ -744,7 +804,6 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
     with progress_col2:
         st.markdown(f"**{risk_level:.1%}**")
     
-    # Labels
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 0.9rem;'>RENDAH<br>(0.0-0.5)</p>", unsafe_allow_html=True)
@@ -753,7 +812,6 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
     with col3:
         st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 0.9rem;'>TINGGI<br>(0.8-1.0)</p>", unsafe_allow_html=True)
     
-    # Rekomendasi
     st.markdown("###  Rekomendasi Tindakan")
     
     recommendations = {
@@ -783,7 +841,6 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
     for rec in recommendations.get(result['status'], []):
         st.markdown(f"- {rec}")
     
-    # Detail Parameter
     with st.expander(" Detail Parameter Input", expanded=False):
         st.markdown("###  Parameter yang Dimasukkan")
         
@@ -799,7 +856,7 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
                 st.success("<100 mm: HUJAN NORMAL")
         
         with col2:
-            st.metric("💧 Tinggi Air", f"{water_level:.2f} mdpl")
+            st.metric(" Tinggi Air", f"{water_level:.2f} mdpl")
             if water_level > 130:
                 st.error(">130 mdpl: TINGGI")
             elif water_level > 110:
@@ -828,7 +885,7 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
                 st.success("<25°C: NORMAL")
     
     st.markdown("---")
-    if st.button("🔄 Uji Parameter Lain", use_container_width=True, type="secondary"):
+    if st.button(" Uji Parameter Lain", use_container_width=True, type="secondary"):
         st.rerun()
 
 # ==================== PAGE HANDLERS LAINNYA ====================
@@ -836,7 +893,7 @@ def show_flood_report_page():
     st.markdown(
         """
         <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Form Laporan Banjir</h2>
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">📝 Form Laporan Banjir</h2>
             <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
                 Laporkan kejadian banjir di sekitar Anda untuk membantu sistem peringatan dini.
             </p>
@@ -850,7 +907,7 @@ def show_current_month_reports_page():
     st.markdown(
         """
         <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Laporan Harian</h2>
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;"> Laporan Harian</h2>
             <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
                 Data laporan banjir real-time dari masyarakat.
             </p>
@@ -864,7 +921,7 @@ def show_monthly_reports_page():
     st.markdown(
         """
         <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Rekapan Bulanan</h2>
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;"> Rekapan Bulanan</h2>
             <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
                 Analisis dan statistik laporan banjir bulan ini.
             </p>
@@ -878,7 +935,7 @@ def show_prediction_page():
     st.markdown(
         """
         <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Prediksi Real-time</h2>
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;"> Prediksi Real-time</h2>
             <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
                 Monitoring dan prediksi banjir berdasarkan data BBWS Bengawan Solo.
             </p>
