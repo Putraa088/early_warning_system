@@ -1,6 +1,6 @@
 from models.FloodReportModel import FloodReportModel
 from models.GoogleSheetsModel import GoogleSheetsModel
-from models.GoogleDriveModel import GoogleDriveModel  
+from models.GoogleDriveModel import GoogleDriveModel
 import os
 import uuid
 from datetime import datetime
@@ -11,7 +11,7 @@ class FloodReportController:
     def __init__(self):
         self.flood_model = FloodReportModel()
         self.sheets_model = None
-        self.drive_model = None  
+        self.drive_model = None
         
         # Initialize services
         self._initialize_services()
@@ -32,7 +32,7 @@ class FloodReportController:
             print(f"⚠️ Google Sheets init error: {e}")
             self.sheets_model = None
         
-        # Google Drive ✅ TAMBAH INI
+        # Google Drive
         try:
             self.drive_model = GoogleDriveModel()
             if self.drive_model and self.drive_model.service:
@@ -46,7 +46,7 @@ class FloodReportController:
     
     def submit_report(self, address, flood_height, reporter_name, reporter_phone=None, photo_file=None):
         """Submit new flood report dengan Google Drive untuk foto"""
-        photo_info = None  # Untuk menyimpan info foto dari Google Drive
+        photo_info = None
         
         try:
             # Get client IP
@@ -78,7 +78,7 @@ class FloodReportController:
                         'reporter_name': str(reporter_name),
                         'reporter_phone': str(reporter_phone) if reporter_phone else '',
                         'ip_address': str(client_ip),
-                        'photo_url': photo_info['view_url'] if photo_info else ''  # Google Drive link
+                        'photo_url': photo_info['view_url'] if photo_info else ''
                     }
                     
                     gs_success = self.sheets_model.save_flood_report(sheets_data)
@@ -113,7 +113,7 @@ class FloodReportController:
                         tinggi_banjir=flood_height,
                         nama_pelapor=reporter_name,
                         no_hp=reporter_phone,
-                        photo_url=photo_url_for_sqlite,  # Direct image URL
+                        photo_url=photo_url_for_sqlite,
                         ip_address=client_ip
                     )
                     
@@ -202,3 +202,75 @@ class FloodReportController:
         except Exception as e:
             print(f"❌ Error in photo upload: {e}")
             return None
+    
+    def check_daily_limit(self, ip_address):
+        """Check if daily limit (10 reports per IP) has been reached"""
+        try:
+            today_count = self.flood_model.get_today_reports_count_by_ip(ip_address)
+            can_submit = today_count < 10
+            print(f"📊 Daily limit check: IP={ip_address}, Count={today_count}, CanSubmit={can_submit}")
+            return can_submit
+        except Exception as e:
+            print(f"⚠️ Error in check_daily_limit: {e}")
+            return True
+    
+    # ============ FUNGSI UNTUK VIEWS ============
+    
+    def get_today_reports(self):
+        """Get today's flood reports"""
+        try:
+            return self.flood_model.get_today_reports()
+        except Exception as e:
+            print(f"⚠️ Error getting today reports: {e}")
+            return []
+    
+    def get_month_reports(self):
+        """Get this month's flood reports"""
+        try:
+            return self.flood_model.get_month_reports()
+        except Exception as e:
+            print(f"⚠️ Error getting month reports: {e}")
+            return []
+    
+    def get_all_reports(self):
+        """Get all flood reports"""
+        try:
+            return self.flood_model.get_all_reports()
+        except Exception as e:
+            print(f"⚠️ Error getting all reports: {e}")
+            return []
+    
+    def get_monthly_statistics(self):
+        """Get monthly statistics for reports"""
+        try:
+            return self.flood_model.get_monthly_statistics()
+        except Exception as e:
+            print(f"⚠️ Error getting statistics: {e}")
+            return {'total_reports': 0, 'month': ''}
+    
+    def get_client_ip(self):
+        """Get client IP address"""
+        try:
+            # Generate a consistent IP for the session
+            if 'user_ip' not in st.session_state:
+                import random
+                st.session_state.user_ip = f"192.168.{random.randint(1, 255)}.{random.randint(1, 255)}"
+            
+            ip = st.session_state.user_ip
+            print(f"🖥️ Using IP: {ip}")
+            return ip
+            
+        except Exception as e:
+            print(f"⚠️ Error getting IP: {e}")
+            return "unknown_user"
+    
+    def is_google_sheets_available(self):
+        """Check if Google Sheets is available"""
+        return (self.sheets_model is not None and 
+                hasattr(self.sheets_model, 'client') and 
+                self.sheets_model.client is not None)
+    
+    def is_google_drive_available(self):
+        """Check if Google Drive is available"""
+        return (self.drive_model is not None and 
+                self.drive_model.service is not None)
