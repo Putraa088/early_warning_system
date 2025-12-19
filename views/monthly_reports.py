@@ -71,7 +71,7 @@ def show_monthly_reports_summary(controller):
                 # Waktu (sudah WIB)
                 time_display = format_time(report.get('report_time', ''))
                 if time_display:
-                    st.markdown(f'<span class="time-badge">🕐 {time_display}</span>', unsafe_allow_html=True)
+                    st.markdown(f'<span class="time-badge"> {time_display}</span>', unsafe_allow_html=True)
             
             with col2:
                 # ✅ Gunakan 'Tinggi Banjir' bukan 'flood_height'
@@ -121,3 +121,4 @@ def format_time(time_string):
         return ""
     except:
         return ""
+
