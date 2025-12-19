@@ -687,6 +687,50 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
     with col3:
         st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 0.9rem;'>TINGGI<br>(0.8-1.0)</p>", unsafe_allow_html=True)
     
+    # Detail Parameter
+    with st.expander("DETAIL PARAMETER INPUT", expanded=False):
+        st.markdown("###  Parameter yang Dimasukkan")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric(" Curah Hujan", f"{rainfall:.2f} mm")
+            if rainfall > 200:
+                st.error(">200 mm: HUJAN SANGAT LEBAT")
+            elif rainfall > 100:
+                st.warning("100-200 mm: HUJAN LEBAT")
+            else:
+                st.success("<100 mm: HUJAN NORMAL")
+        
+        with col2:
+            st.metric("💧 Tinggi Air", f"{water_level:.2f} mdpl")
+            if water_level > 130:
+                st.error(">130 mdpl: TINGGI")
+            elif water_level > 110:
+                st.warning("110-130 mdpl: MENENGAH")
+            else:
+                st.success("<110 mdpl: NORMAL")
+        
+        with col3:
+            st.metric(" Kelembapan", f"{humidity:.2f}%")
+            if humidity > 80:
+                st.warning(">80%: SANGAT LEMBAP")
+            elif humidity > 60:
+                st.info("60-80%: LEMBAP")
+            else:
+                st.success("<60%: NORMAL")
+        
+        with col4:
+            temp_avg = (temp_min + temp_max) / 2
+            st.metric(" Suhu Rata-rata", f"{temp_avg:.1f}°C")
+            st.caption(f"Min: {temp_min:.1f}°C | Max: {temp_max:.1f}°C")
+            if temp_avg > 30:
+                st.error(">30°C: PANAS")
+            elif temp_avg > 25:
+                st.warning("25-30°C: HANGAT")
+            else:
+                st.success("<25°C: NORMAL")
+    
     st.markdown("---")
     if st.button("🔄 Uji Parameter Lain", use_container_width=True, type="secondary"):
         st.rerun()
