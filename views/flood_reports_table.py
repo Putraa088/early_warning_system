@@ -24,6 +24,16 @@ def show_current_month_reports(controller):
         font-size: 0.9rem;
         cursor: pointer;
     }
+    .timestamp-badge {
+        background: rgba(0, 168, 255, 0.15);
+        color: #00a8ff;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-top: 5px;
+    }
     </style>
     """, unsafe_allow_html=True)
     
@@ -52,20 +62,27 @@ def show_current_month_reports(controller):
         with st.container():
             st.markdown('<div class="report-card">', unsafe_allow_html=True)
             
-            col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 1, 2])
+            # Grid layout baru: 5 kolom tanpa ID
+            col1, col2, col3, col4, col5 = st.columns([3, 2, 2, 2, 2])
             
             with col1:
                 # Alamat
                 address = report.get('Alamat', report.get('alamat', 'N/A'))
                 st.write(f"**{i}. {address}**")
                 
-                # ID dan waktu
-                report_id = report.get('id', 'N/A')
+                # Timestamp dengan format yang sama seperti di rekapan bulanan
                 timestamp = report.get('Timestamp', '')
                 if timestamp:
-                    st.caption(f"ID: {report_id} | {timestamp[11:19]}")
+                    # Format: "Hari, Tanggal Bulan Tahun Jam:Menit"
+                    formatted_time = format_timestamp_for_display(timestamp)
+                    st.markdown(f'<span class="timestamp-badge"> {formatted_time}</span>', 
+                            unsafe_allow_html=True)
                 else:
-                    st.caption(f"ID: {report_id}")
+                    # Fallback ke report_time jika Timestamp tidak ada
+                    time_display = format_time(report.get('report_time', ''))
+                    if time_display:
+                        st.markdown(f'<span class="timestamp-badge"> {time_display}</span>', 
+                                unsafe_allow_html=True)
             
             with col2:
                 # Tinggi Banjir
@@ -78,31 +95,26 @@ def show_current_month_reports(controller):
                 st.write(date_display)
             
             with col4:
-                # Waktu
-                time_display = format_time(report.get('report_time', ''))
-                st.write(time_display)
-            
-            with col5:
                 # Nama Pelapor
                 reporter_name = report.get('Nama Pelapor', report.get('nama_pelapor', 'N/A'))
                 st.write(reporter_name)
             
-            with col6:
+            with col5:
                 # Foto
                 photo_url = report.get('Photo URL', report.get('photo_url', ''))
                 
                 if photo_url:
                     # Check jika foto ada
                     if os.path.exists(str(photo_url)):
-                        if st.button(" Lihat", key=f"view_{report_id}", use_container_width=True):
-                            with st.expander(f" Foto - {address[:30]}...", expanded=True):
+                        if st.button("Lihat", key=f"view_{i}", use_container_width=True):
+                            with st.expander(f"Foto - {address[:30]}...", expanded=True):
                                 try:
                                     st.image(photo_url, use_column_width=True)
                                 except Exception as e:
                                     st.warning(f"Gagal menampilkan foto: {e}")
                     elif 'drive.google.com' in str(photo_url):
                         # Google Drive URL
-                        if st.button("🔗 Buka", key=f"drive_{report_id}", use_container_width=True):
+                        if st.button("🔗 Buka", key=f"drive_{i}", use_container_width=True):
                             st.markdown(f"[📎 Buka Foto di Google Drive]({photo_url})")
                     else:
                         st.write("📭 Tidak ada")
@@ -116,7 +128,7 @@ def show_current_month_reports(controller):
             st.divider()
     
     # Summary
-    with st.expander(" Statistik Hari Ini", expanded=False):
+    with st.expander(" Analisis Hari Ini", expanded=False):
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Total Laporan", len(reports))
@@ -133,6 +145,47 @@ def show_current_month_reports(controller):
             ))
             st.metric("Pelapor Berbeda", unique_reporters)
 
+def format_timestamp_for_display(timestamp):
+    """Format timestamp untuk display yang konsisten dengan rekapan bulanan"""
+    try:
+        if not timestamp:
+            return ""
+        
+        # Parse timestamp (format: "2024-12-20 14:30:00")
+        if isinstance(timestamp, str):
+            # Coba berbagai format timestamp
+            formats_to_try = [
+                '%Y-%m-%d %H:%M:%S',
+                '%Y-%m-%d %H:%M',
+                '%d/%m/%Y %H:%M:%S',
+                '%d-%m-%Y %H:%M:%S'
+            ]
+            
+            for fmt in formats_to_try:
+                try:
+                    dt = datetime.strptime(timestamp, fmt)
+                    break
+                except ValueError:
+                    continue
+            else:
+                # Jika semua format gagal, return asli
+                return timestamp[:16]  # Ambil 16 karakter pertama
+        else:
+            dt = timestamp
+        
+        # Format seperti di rekapan bulanan: "HH:MM"
+        return dt.strftime('%H:%M')
+        
+    except Exception:
+        # Fallback: return bagian waktu saja
+        if ' ' in str(timestamp):
+            parts = str(timestamp).split(' ')
+            if len(parts) > 1:
+                time_part = parts[1]
+                if ':' in time_part:
+                    return time_part[:5]  # HH:MM
+        return str(timestamp)[:5] if len(str(timestamp)) >= 5 else str(timestamp)
+
 def format_date(date_string):
     """Format date untuk display"""
     try:
@@ -141,7 +194,15 @@ def format_date(date_string):
         
         # Parse date
         if isinstance(date_string, str):
-            date_obj = datetime.strptime(date_string, '%Y-%m-%d')
+            # Coba format YYYY-MM-DD
+            try:
+                date_obj = datetime.strptime(date_string, '%Y-%m-%d')
+            except ValueError:
+                # Coba format lain
+                try:
+                    date_obj = datetime.strptime(date_string, '%d/%m/%Y')
+                except ValueError:
+                    return str(date_string)
         else:
             date_obj = date_string
         
@@ -160,7 +221,7 @@ def format_time(time_string):
         
         if isinstance(time_string, str):
             if ':' in time_string:
-                return time_string[:5]  
+                return time_string[:5]  # HH:MM
             return time_string
         else:
             return str(time_string)
