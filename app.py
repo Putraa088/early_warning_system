@@ -336,6 +336,22 @@ h1,h2,h3{
     margin-bottom: 30px;
 }
 
+/* CSS untuk submenu */
+.submenu-container {
+    padding-left: 20px;
+    margin: 5px 0;
+}
+
+.submenu-button {
+    font-size: 15px !important;
+    padding: 10px 20px !important;
+    background: rgba(255,255,255,0.03) !important;
+}
+
+.submenu-button:hover {
+    background: rgba(0,174,230,0.05) !important;
+}
+
 /* HAPUS ATURAN OVERFLOW HIDDEN */
 .element-container, .st-emotion-cache-1p1nwyz {
     /* overflow: hidden !important; */ /* DIHAPUS */
@@ -395,14 +411,19 @@ def setup_sidebar():
         
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
+        # Initialize session state untuk navigation
         if 'current_page' not in st.session_state:
             st.session_state.current_page = "Home"
+        if 'show_catatan_submenu' not in st.session_state:
+            st.session_state.show_catatan_submenu = False
+        if 'catatan_submenu_page' not in st.session_state:
+            st.session_state.catatan_submenu_page = None
 
+        # Menu utama
         menu_items = [
             ("Home", "Home"),
             ("Lapor Banjir", "Lapor Banjir"),
-            ("Laporan Harian", "Laporan Harian"),
-            ("Rekapan Bulanan", "Rekapan Bulanan"),
+            ("Catatan Laporan", "Catatan Laporan"),
             ("Prediksi Real-time", "Prediksi Banjir"),
             ("Kalkulator Banjir", "Kalkulator Banjir")
         ]
@@ -410,12 +431,54 @@ def setup_sidebar():
         st.markdown('<div style="margin: 10px 0;">', unsafe_allow_html=True)
         
         for text, page in menu_items:
+            is_active = False
+            if page == "Catatan Laporan":
+                # Cek apakah halaman aktif adalah submenu dari Catatan Laporan
+                is_active = st.session_state.current_page in ["Catatan Laporan", "Harian", "Bulanan"]
+            else:
+                is_active = st.session_state.current_page == page
+            
             if st.button(text, key=f"menu_{page}", use_container_width=True,
-                        type="primary" if st.session_state.current_page == page else "secondary"):
-                st.session_state.current_page = page
+                        type="primary" if is_active else "secondary"):
+                if page == "Catatan Laporan":
+                    # Toggle submenu atau set ke mode submenu
+                    st.session_state.show_catatan_submenu = not st.session_state.show_catatan_submenu
+                    if st.session_state.show_catatan_submenu:
+                        st.session_state.current_page = "Catatan Laporan"
+                    else:
+                        # Jika sedang di submenu, kembali ke Catatan Laporan utama
+                        st.session_state.current_page = "Catatan Laporan"
+                        st.session_state.catatan_submenu_page = None
+                else:
+                    # Halaman biasa
+                    st.session_state.current_page = page
+                    st.session_state.show_catatan_submenu = False
+                    st.session_state.catatan_submenu_page = None
                 st.rerun()
         
         st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Tampilkan submenu jika Catatan Laporan aktif
+        if st.session_state.show_catatan_submenu:
+            st.markdown('<div class="submenu-container">', unsafe_allow_html=True)
+            
+            # Submenu Harian
+            is_harian_active = st.session_state.catatan_submenu_page == "Harian" or st.session_state.current_page == "Harian"
+            if st.button("📅 Harian", key="submenu_harian", use_container_width=True,
+                        type="primary" if is_harian_active else "secondary"):
+                st.session_state.current_page = "Harian"
+                st.session_state.catatan_submenu_page = "Harian"
+                st.rerun()
+            
+            # Submenu Bulanan
+            is_bulanan_active = st.session_state.catatan_submenu_page == "Bulanan" or st.session_state.current_page == "Bulanan"
+            if st.button("📊 Bulanan", key="submenu_bulanan", use_container_width=True,
+                        type="primary" if is_bulanan_active else "secondary"):
+                st.session_state.current_page = "Bulanan"
+                st.session_state.catatan_submenu_page = "Bulanan"
+                st.rerun()
+            
+            st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown("### Kontak")
         
@@ -753,6 +816,216 @@ def show_calculator_result(result, rainfall, water_level, humidity, temp_min, te
     if st.button("🔄 Uji Parameter Lain", use_container_width=True, type="secondary"):
         st.rerun()
 
+# ==================== CATATAN LAPORAN PAGE ====================
+def show_catatan_laporan_page():
+    """Halaman utama Catatan Laporan (untuk memilih submenu)"""
+    st.markdown(
+        """
+        <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Catatan Laporan</h2>
+            <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
+                Pilih jenis laporan yang ingin dilihat
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown(
+            """
+            <div class="feature-card" style="cursor: pointer; text-align: center;" onclick="window.location.href='?page=Harian'">
+                <h3> Harian</h3>
+                <p>laporan banjir yang tercatat hari ini</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        if st.button("Lihat Laporan Harian", key="go_harian_from_main", use_container_width=True):
+            st.session_state.current_page = "Harian"
+            st.session_state.catatan_submenu_page = "Harian"
+            st.rerun()
+    
+    with col2:
+        st.markdown(
+            """
+            <div class="feature-card" style="cursor: pointer; text-align: center;" onclick="window.location.href='?page=Bulanan'">
+                <h3> Bulanan</h3>
+                <p>Laporan dan Statistik Tahunan</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        if st.button("Lihat Rekapan Bulanan", key="go_bulanan_from_main", use_container_width=True):
+            st.session_state.current_page = "Bulanan"
+            st.session_state.catatan_submenu_page = "Bulanan"
+            st.rerun()
+
+# ==================== HARIAN PAGE (LAPORAN HARIAN) ====================
+def show_harian_page():
+    """Halaman Laporan Harian (sama dengan sebelumnya)"""
+    st.markdown(
+        """
+        <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Laporan Harian</h2>
+            <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
+                Informasi banjir yang tercatat hari ini.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    show_current_month_reports(flood_controller)
+
+# ==================== BULANAN PAGE (REKAPAN BULANAN + STATISTIK 1 TAHUN) ====================
+def show_bulanan_page():
+    """Halaman Rekapan Bulanan dengan statistik 1 tahun"""
+    st.markdown(
+        """
+        <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Rekapan Bulanan</h2>
+            <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
+                Analisis dan statistik laporan bulan ini beserta data historis 1 tahun.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Tab untuk memilih antara Laporan Bulanan dan Statistik 1 Tahun
+    tab1, tab2 = st.tabs([" Laporan Bulan Ini", " Statistik 1 Tahun"])
+    
+    with tab1:
+        # Tampilkan laporan bulanan seperti sebelumnya
+        show_monthly_reports_summary(flood_controller)
+    
+    with tab2:
+        st.markdown("### Statistik Laporan 1 Tahun")
+        st.caption("Data historis laporan banjir selama 12 bulan terakhir")
+        
+        # Dapatkan data real dari database
+        yearly_stats = flood_controller.get_yearly_statistics()
+        months_data = yearly_stats.get('months_data', [])
+        
+        if not months_data:
+            st.info(" Belum ada data laporan untuk 12 bulan terakhir.")
+            st.info("Sistem akan menampilkan data secara otomatis ketika ada laporan baru.")
+            return
+        
+        # Ekstrak data untuk chart
+        month_names = [item['month_name'] for item in months_data]
+        report_counts = [item['report_count'] for item in months_data]
+        is_current_flags = [item['is_current'] for item in months_data]
+        
+        # Tampilkan metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            total_reports_year = yearly_stats.get('total_reports', 0)
+            st.metric("Total Laporan (1 Tahun)", total_reports_year)
+        
+        with col2:
+            avg_per_month = yearly_stats.get('avg_per_month', 0)
+            st.metric("Rata-rata per Bulan", f"{avg_per_month:.1f}")
+        
+        with col3:
+            max_month = yearly_stats.get('max_month', "Tidak ada")
+            max_count = yearly_stats.get('max_count', 0)
+            st.metric("Bulan Tertinggi", f"{max_month} ({max_count})")
+        
+        st.markdown("---")
+        
+        # Buat bar chart
+        st.markdown("#### Grafik Jumlah Laporan per Bulan")
+        
+        import matplotlib.pyplot as plt
+        
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Buat warna: merah untuk bulan berjalan, biru untuk lainnya
+        colors = ['#ff6b6b' if is_current else '#00a8ff' 
+                for is_current in is_current_flags]
+        
+        bars = ax.bar(month_names, report_counts, color=colors)
+        
+        # Tambah label di atas bar
+        for bar, count in zip(bars, report_counts):
+            height = bar.get_height()
+            if height > 0:  # Hanya tampilkan label jika ada data
+                ax.text(bar.get_x() + bar.get_width()/2., height + 0.5,
+                    f'{int(count)}', ha='center', va='bottom', fontsize=10)
+        
+        ax.set_xlabel('Bulan', fontsize=12)
+        ax.set_ylabel('Jumlah Laporan', fontsize=12)
+        ax.set_title(f'Distribusi Laporan Banjir 12 Bulan Terakhir', fontsize=14, pad=20)
+        ax.grid(axis='y', alpha=0.3)
+        ax.set_axisbelow(True)
+        
+        # Rotasi label bulan
+        plt.xticks(rotation=45)
+        
+        # Atur y-axis untuk memulai dari 0
+        ax.set_ylim(bottom=0)
+        
+        # Atur layout
+        plt.tight_layout()
+        
+        # Tampilkan chart
+        st.pyplot(fig)
+        
+        # Tabel data detail
+        with st.expander(" Lihat Data Lengkap", expanded=False):
+            # Buat DataFrame untuk tabel
+            import pandas as pd
+            table_data = []
+            for item in months_data:
+                table_data.append({
+                    'Bulan': item['month_name'],
+                    'Periode': item['year_month'],
+                    'Jumlah Laporan': item['report_count'],
+                    'Status': 'Bulan Berjalan' if item['is_current'] else 'Bulan Sebelumnya'
+                })
+            
+            if table_data:
+                df = pd.DataFrame(table_data)
+                st.dataframe(df, use_container_width=True, hide_index=True)
+                
+                # Download button untuk data
+                csv = df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label=" Download Data (CSV)",
+                    data=csv,
+                    file_name=f"statistik_laporan_{yearly_stats.get('current_year_month', '')}.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+            else:
+                st.info("Tidak ada data untuk ditampilkan")
+        
+        # Informasi tambahan
+        st.markdown("---")
+        st.markdown("####  Analisis Tren")
+        
+        if len(report_counts) >= 2:
+            # Hitung tren
+            current_count = report_counts[-1] if report_counts else 0
+            prev_count = report_counts[-2] if len(report_counts) >= 2 else 0
+            
+            if prev_count > 0:
+                change_percent = ((current_count - prev_count) / prev_count) * 100
+                if change_percent > 0:
+                    st.warning(f"⚠️ **Peningkatan {abs(change_percent):.1f}%** dari bulan sebelumnya")
+                elif change_percent < 0:
+                    st.success(f"✅ **Penurunan {abs(change_percent):.1f}%** dari bulan sebelumnya")
+                else:
+                    st.info(" **Stabil** - jumlah laporan sama dengan bulan sebelumnya")
+            
+            # Cek bulan dengan laporan 0
+            zero_months = [month for month, count in zip(month_names, report_counts) if count == 0]
+            if zero_months:
+                st.info(f" **Bulan tanpa laporan:** {', '.join(zero_months)}")
+
 # ==================== PAGE HANDLERS LAINNYA ====================
 def show_flood_report_page():
     st.markdown(
@@ -767,34 +1040,6 @@ def show_flood_report_page():
         unsafe_allow_html=True
     )
     show_flood_report_form(flood_controller)
-
-def show_current_month_reports_page():
-    st.markdown(
-        """
-        <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Laporan Harian</h2>
-            <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
-                Data laporan banjir real-time dari masyarakat.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    show_current_month_reports(flood_controller)
-
-def show_monthly_reports_page():
-    st.markdown(
-        """
-        <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Rekapan Bulanan</h2>
-            <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
-                Analisis dan statistik laporan banjir bulan ini.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    show_monthly_reports_summary(flood_controller)
 
 def show_prediction_page():
     st.markdown(
@@ -817,16 +1062,26 @@ def main():
     page_handlers = {
         "Home": show_homepage,
         "Lapor Banjir": show_flood_report_page,
-        "Laporan Harian": show_current_month_reports_page,
-        "Rekapan Bulanan": show_monthly_reports_page,
+        "Catatan Laporan": show_catatan_laporan_page,
+        "Harian": show_harian_page,
+        "Bulanan": show_bulanan_page,
         "Prediksi Banjir": show_prediction_page,
         "Kalkulator Banjir": show_flood_calculator_page
     }
 
-    handler = page_handlers.get(st.session_state.current_page, show_homepage)
+    # Get current page handler
+    current_page = st.session_state.current_page
+    handler = page_handlers.get(current_page, show_homepage)
+    
+    # Eksekusi handler
     handler()
 
 if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
+    if 'show_catatan_submenu' not in st.session_state:
+        st.session_state.show_catatan_submenu = False
+    if 'catatan_submenu_page' not in st.session_state:
+        st.session_state.catatan_submenu_page = None
+    
     main()
