@@ -64,22 +64,41 @@ try:
     from controllers.FloodReportController import FloodReportController
     from controllers.RealTimeDataController import RealTimeDataController
     print("✅ Semua controllers berhasil di-import")
-except Exception as e:
+except ImportError as e:
     st.error(f"Import Error Controller: {e}")
+    print(f"❌ Import error details: {e}")
     
-    # Fallback tanpa Google Sheets
+    # Create fallback controllers
     class VisitorController:
         def track_visit(self, page): return None
-        def get_visitor_stats(self): return {}
+        def get_visitor_stats(self): return {'today': 0, 'month': 0, 'online': 0, 'popular_pages': []}
     
     class FloodReportController:
+        def __init__(self):
+            print("⚠️ Using fallback FloodReportController")
+        
         def submit_report(self, *args, **kwargs):
-            return False, "Sistem offline - Google Sheets tidak terhubung"
-        def get_today_reports(self): return []
-        def get_month_reports(self): return []
-        def get_all_reports(self): return []
-        def get_monthly_statistics(self): return {}
-        def get_client_ip(self): return "127.0.0.1"
+            return False, "Sistem offline - Controller tidak tersedia"
+        
+        # TAMBAHKAN METHOD YANG DIBUTUHKAN
+        def get_today_reports(self): 
+            print("⚠️ Fallback: get_today_reports()")
+            return []
+        
+        def get_month_reports(self): 
+            print("⚠️ Fallback: get_month_reports()")
+            return []
+        
+        def get_all_reports(self): 
+            print("⚠️ Fallback: get_all_reports()")
+            return []
+        
+        def get_monthly_statistics(self): 
+            print("⚠️ Fallback: get_monthly_statistics()")
+            return {}
+        
+        def get_client_ip(self): 
+            return "127.0.0.1"
     
     class RealTimeDataController:
         def get_comprehensive_data(self): return []
@@ -435,7 +454,7 @@ def show_homepage():
     
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     
-    st.markdown("### Tentang Sistem")
+    st.markdown("### Fitur Utama Sistem")
     
     col1, col2 = st.columns(2)
     
@@ -443,7 +462,14 @@ def show_homepage():
         st.markdown(
             """
             <div class="feature-card">
-                <p>Sebagai platform berbasis teknologi, Sistem ini mengintegrasikan pemantauan real-time parameter hidrometeorologi dengan algoritma prediktif untuk mengidentifikasi risiko banjir secara dini. Tujuannya adalah memberdayakan masyarakat dan pihak terkait dengan informasi yang akurat dan tepat waktu, sehingga dapat mengambil langkah proaktif dalam kesiapsiagaan dan mitigasi untuk meminimalkan dampak banjir..</p>
+                <h3>KECERDASAN BUATAN</h3>
+                <p>Prediksi real-time menggunakan neural network dengan analisis data historis untuk akurasi maksimal.</p>
+                <ul style="color: #dfe9ec; padding-left: 20px;">
+                    <li>Monitoring tinggi air otomatis</li>
+                    <li>Prediksi risiko berbasis AI</li>
+                    <li>Update data setiap 15 menit</li>
+                    <li>Peringatan dini real-time</li>
+                </ul>
             </div>
             """,
             unsafe_allow_html=True
@@ -453,17 +479,59 @@ def show_homepage():
         st.markdown(
             """
             <div class="feature-card">
-                <h3>Apa Yang Dilakukan Sistem Ini?</h3>
+                <h3>ANALISIS STATISTIK</h3>
+                <p>Distribusi Gumbel untuk analisis nilai ekstrem dan perhitungan periode ulang banjir.</p>
                 <ul style="color: #dfe9ec; padding-left: 20px;">
-                    <li>Memantau curah hujan dan tinggi air</li>
-                    <li>Memberikan perkiraan potensi banjir</li>
-                    <li>Menyampaikan peringatan dini apabila terjadi peningkatan risiko</li>
+                    <li>Probabilitas kejadian ekstrem</li>
+                    <li>Periode ulang 5-50 tahun</li>
+                    <li>Risk assessment terstruktur</li>
+                    <li>Visualisasi data interaktif</li>
                 </ul>
             </div>
             """,
             unsafe_allow_html=True
         )
     
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    
+    st.markdown("### Fitur Baru: Kalkulator Banjir")
+    
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h3>INPUT FLEKSIBEL</h3>
+                <p>Masukkan parameter cuaca sesuai kondisi lokasi Anda dengan input yang mudah.</p>
+                <ul style="color: #dfe9ec; padding-left: 20px;">
+                    <li>Curah hujan (0-500 mm)</li>
+                    <li>Tinggi air (60-150 mdpl)</li>
+                    <li>Kelembapan (0-100%)</li>
+                    <li>Suhu min & max</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
+    with col4:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h3>HASIL AKURAT</h3>
+                <p>Dapatkan prediksi risiko banjir berdasarkan kondisi spesifik di lokasi Anda.</p>
+                <ul style="color: #dfe9ec; padding-left: 20px;">
+                    <li>Status risiko jelas (RENDAH/MENENGAH/TINGGI)</li>
+                    <li>Rekomendasi tindakan spesifik</li>
+                    <li>Detail parameter lengkap</li>
+                    <li>Visualisasi risk level</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
 # ==================== KALKULATOR BANJIR PAGE ====================
 def show_flood_calculator_page():
     st.markdown(
@@ -840,5 +908,3 @@ if __name__ == "__main__":
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     main()
-
-
