@@ -39,13 +39,13 @@ def show_current_month_reports(controller):
         return
     
     if not reports:
-        st.info("📭 Tidak ada laporan banjir untuk hari ini.")
+        st.info(" Tidak ada laporan banjir untuk hari ini.")
         return
     
     st.markdown("---")
     
     # Header
-    st.markdown(f"### 📋 Daftar Laporan Hari Ini ({len(reports)} laporan)")
+    st.markdown(f"###  Daftar Laporan Hari Ini ({len(reports)} laporan)")
     
     # Display reports
     for i, report in enumerate(reports, 1):
@@ -94,8 +94,8 @@ def show_current_month_reports(controller):
                 if photo_url:
                     # Check jika foto ada
                     if os.path.exists(str(photo_url)):
-                        if st.button("👁️ Lihat", key=f"view_{report_id}", use_container_width=True):
-                            with st.expander(f"📷 Foto - {address[:30]}...", expanded=True):
+                        if st.button(" Lihat", key=f"view_{report_id}", use_container_width=True):
+                            with st.expander(f" Foto - {address[:30]}...", expanded=True):
                                 try:
                                     st.image(photo_url, use_column_width=True)
                                 except Exception as e:
@@ -116,7 +116,7 @@ def show_current_month_reports(controller):
             st.divider()
     
     # Summary
-    with st.expander("📊 Statistik Hari Ini", expanded=False):
+    with st.expander(" Statistik Hari Ini", expanded=False):
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Total Laporan", len(reports))
@@ -166,3 +166,4 @@ def format_time(time_string):
             return str(time_string)
     except:
         return str(time_string) if time_string else ""
+
