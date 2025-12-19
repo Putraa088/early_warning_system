@@ -13,34 +13,27 @@ class FloodReportController:
         self.upload_folder = "uploads"
         
         # Initialize Google Sheets
-        self._initialize_google_sheets()
-        
-        # Create upload folder
-        self._ensure_upload_folder()
-        print("✅ FloodReportController initialized")
-    
-    def _initialize_google_sheets(self):
-        """Initialize Google Sheets connection"""
         try:
-            print("🔄 Initializing Google Sheets connection...")
             self.sheets_model = GoogleSheetsModel()
-            
             if self.sheets_model and hasattr(self.sheets_model, 'client') and self.sheets_model.client:
-                print("✅ Google Sheets connected")
+                print("✅ Google Sheets connected for flood reports")
             else:
                 print("⚠️ Google Sheets offline - using SQLite only")
                 self.sheets_model = None
         except Exception as e:
             print(f"⚠️ Google Sheets init error: {e}")
-            print("ℹ️ System will continue with SQLite only")
             self.sheets_model = None
+        
+        # Create upload folder
+        self._ensure_upload_folder()
+        print("✅ FloodReportController initialized")
     
     def _ensure_upload_folder(self):
         """Ensure upload folder exists"""
         try:
             if not os.path.exists(self.upload_folder):
                 os.makedirs(self.upload_folder)
-                print(f"✅ Created upload folder: {self.upload_folder}")
+                print(f"✅ Created upload folder: {os.path.abspath(self.upload_folder)}")
             else:
                 print(f"✅ Upload folder exists: {self.upload_folder}")
         except Exception as e:
@@ -58,7 +51,7 @@ class FloodReportController:
             return True
     
     def submit_report(self, address, flood_height, reporter_name, reporter_phone=None, photo_file=None):
-        """Submit new flood report"""
+        """Submit new flood report dengan struktur baru"""
         photo_url = None
         photo_filename = None
         
@@ -73,137 +66,123 @@ class FloodReportController:
             
             # Handle photo upload (OPTIONAL)
             if photo_file is not None:
-                photo_url, photo_filename = self._handle_photo_upload(photo_file)
-                if photo_url is False:  # Jika ada error validasi
-                    return False, photo_filename  # photo_filename berisi pesan error
+                try:
+                    file_extension = photo_file.name.split('.')[-1].lower()
+                    valid_extensions = ['jpg', 'jpeg', 'png', 'gif']
+                    
+                    if file_extension not in valid_extensions:
+                        return False, f"❌ Format file tidak didukung. Gunakan: {', '.join(valid_extensions)}"
+                    
+                    photo_filename = f"{uuid.uuid4()}.{file_extension}"
+                    photo_path = os.path.join(self.upload_folder, photo_filename)
+                    
+                    print(f"📸 Saving photo to: {photo_path}")
+                    
+                    # Save photo
+                    with open(photo_path, "wb") as f:
+                        f.write(photo_file.getbuffer())
+                    
+                    photo_url = photo_path
+                    print(f"✅ Photo saved: {photo_filename}")
+                    
+                except Exception as e:
+                    print(f"⚠️ Error saving photo: {e}")
+                    # Lanjutkan tanpa foto jika error
+                    photo_url = None
+                    photo_filename = None
             
-            # STEP 1: Save to SQLite database
-            print("💾 Saving to SQLite database...")
+            # STEP 1: Create report in SQLite database (dengan parameter baru)
+            print("💾 Saving to SQLite database dengan struktur baru...")
             
+            # ✅ Parameter sesuai dengan method create_report yang baru
             report_id = self.flood_model.create_report(
-                alamat=address,
-                tinggi_banjir=flood_height,
-                nama_pelapor=reporter_name,
-                no_hp=reporter_phone,
-                photo_url=photo_url,
-                ip_address=client_ip
+                alamat=address,  # ✅ Parameter: alamat (bukan address)
+                tinggi_banjir=flood_height,  # ✅ Parameter: tinggi_banjir
+                nama_pelapor=reporter_name,  # ✅ Parameter: nama_pelapor
+                no_hp=reporter_phone,  # ✅ Parameter: no_hp
+                photo_url=photo_url,  # ✅ Parameter: photo_url (bukan photo_path)
+                ip_address=client_ip  # Parameter sama
             )
             
             if not report_id:
                 print("❌ Failed to save to SQLite")
-                # Cleanup photo jika ada
-                self._cleanup_photo(photo_url)
+                # Cleanup photo if exists
+                if photo_url and os.path.exists(photo_url):
+                    try:
+                        os.remove(photo_url)
+                    except:
+                        pass
                 return False, "❌ Gagal menyimpan laporan ke database lokal."
             
             print(f"✅ SQLite save successful! Report ID: {report_id}")
             
             # STEP 2: Save to Google Sheets (if available)
-            if self.sheets_model and hasattr(self.sheets_model, 'client') and self.sheets_model.client:
+            if self.sheets_model and self.sheets_model.client:
                 try:
                     print("📊 Saving to Google Sheets...")
                     
-                    # Prepare data untuk Google Sheets
+                    # Prepare data untuk Google Sheets (masih pakai key lama untuk kompatibilitas)
                     sheets_data = {
                         'address': str(address),
                         'flood_height': str(flood_height),
                         'reporter_name': str(reporter_name),
                         'reporter_phone': str(reporter_phone) if reporter_phone else '',
                         'ip_address': str(client_ip),
-                        'photo_url': str(photo_url) if photo_url else ''
+                        'photo_url': photo_url if photo_url else ''
                     }
                     
-                    success = self.sheets_model.save_flood_report(sheets_data)
+                    print(f"📋 Google Sheets data prepared")
                     
+                    success = self.sheets_model.save_flood_report(sheets_data)
                     if success:
                         print("✅ Report saved to Google Sheets")
-                        return True, "✅ Laporan berhasil dikirim! Data telah disimpan di database dan Google Sheets."
+                        gs_status = " (dan Google Sheets)"
                     else:
                         print("⚠️ Failed to save to Google Sheets")
-                        return True, "✅ Laporan berhasil dikirim! Data disimpan di database lokal (Google Sheets offline)."
-                        
+                        gs_status = " (Google Sheets gagal)"
                 except Exception as e:
                     print(f"⚠️ Error saving to Google Sheets: {e}")
-                    return True, "✅ Laporan berhasil dikirim! Data disimpan di database lokal (Google Sheets error)."
+                    gs_status = " (Google Sheets error)"
             else:
                 print("ℹ️ Google Sheets not available")
-                return True, "✅ Laporan berhasil dikirim! Data disimpan di database lokal."
+                gs_status = ""
+            
+            # STEP 3: Verify data was saved
+            today_reports = self.flood_model.get_today_reports()
+            print(f"✅ Verification: Total reports today = {len(today_reports)}")
+            
+            return True, f"✅ Laporan berhasil dikirim! Data telah disimpan di database{gs_status}."
                 
         except Exception as e:
             print(f"❌ CRITICAL Error in submit_report: {e}")
             traceback.print_exc()
             
             # Cleanup on error
-            self._cleanup_photo(photo_url)
+            if photo_url and os.path.exists(photo_url):
+                try:
+                    os.remove(photo_url)
+                except:
+                    pass
             
             return False, f"❌ Error sistem: {str(e)}"
-    
-    def _handle_photo_upload(self, photo_file):
-        """Handle photo upload"""
-        try:
-            file_extension = photo_file.name.split('.')[-1].lower()
-            valid_extensions = ['jpg', 'jpeg', 'png', 'gif']
-            
-            if file_extension not in valid_extensions:
-                return False, f"❌ Format file tidak didukung. Gunakan: {', '.join(valid_extensions)}"
-            
-            photo_filename = f"{uuid.uuid4()}.{file_extension}"
-            photo_path = os.path.join(self.upload_folder, photo_filename)
-            
-            print(f"📸 Saving photo to: {photo_path}")
-            
-            # Save photo
-            with open(photo_path, "wb") as f:
-                f.write(photo_file.getbuffer())
-            
-            print(f"✅ Photo saved: {photo_filename}")
-            return photo_path, photo_filename
-            
-        except Exception as e:
-            print(f"⚠️ Error saving photo: {e}")
-            return None, None  # Lanjutkan tanpa foto jika error
-    
-    def _cleanup_photo(self, photo_url):
-        """Cleanup photo file jika ada error"""
-        if photo_url and os.path.exists(photo_url):
-            try:
-                os.remove(photo_url)
-                print(f"🗑️ Cleaned up photo: {photo_url}")
-            except Exception as e:
-                print(f"⚠️ Error cleaning up photo: {e}")
     
     # ============ FUNGSI UNTUK VIEWS ============
     
     def get_today_reports(self):
         """Get today's flood reports"""
-        try:
-            return self.flood_model.get_today_reports()
-        except Exception as e:
-            print(f"⚠️ Error getting today reports: {e}")
-            return []
+        return self.flood_model.get_today_reports()
     
     def get_month_reports(self):
         """Get this month's flood reports"""
-        try:
-            return self.flood_model.get_month_reports()
-        except Exception as e:
-            print(f"⚠️ Error getting month reports: {e}")
-            return []
+        return self.flood_model.get_month_reports()
     
     def get_all_reports(self):
         """Get all flood reports"""
-        try:
-            return self.flood_model.get_all_reports()
-        except Exception as e:
-            print(f"⚠️ Error getting all reports: {e}")
-            return []
+        return self.flood_model.get_all_reports()
     
     def get_monthly_statistics(self):
         """Get monthly statistics for reports"""
-        try:
-            return self.flood_model.get_monthly_statistics()
-        except Exception as e:
-            print(f"⚠️ Error getting statistics: {e}")
-            return {'total_reports': 0, 'month': ''}
+        return self.flood_model.get_monthly_statistics()
     
     def get_client_ip(self):
         """Get client IP address"""
@@ -220,9 +199,3 @@ class FloodReportController:
         except Exception as e:
             print(f"⚠️ Error getting IP: {e}")
             return "unknown_user"
-    
-    def is_google_sheets_available(self):
-        """Check if Google Sheets is available"""
-        return (self.sheets_model is not None and 
-                hasattr(self.sheets_model, 'client') and 
-                self.sheets_model.client is not None)
