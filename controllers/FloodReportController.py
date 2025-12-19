@@ -19,26 +19,21 @@ class FloodReportController:
         self._ensure_upload_folder()
         print("✅ FloodReportController initialized")
     
-def _initialize_google_sheets(self):
-    """Initialize Google Sheets connection dengan delay"""
-    try:
-        print("🔄 Initializing Google Sheets connection...")
-        
-        # Tunggu sebentar untuk pastikan Streamlit session siap
-        import time
-        time.sleep(0.5)
-        
-        self.sheets_model = GoogleSheetsModel()
-        
-        if self.sheets_model and hasattr(self.sheets_model, 'client') and self.sheets_model.client:
-            print("✅ Google Sheets connected")
-        else:
-            print("⚠️ Google Sheets offline - using SQLite only")
+    def _initialize_google_sheets(self):
+        """Initialize Google Sheets connection"""
+        try:
+            print("🔄 Initializing Google Sheets connection...")
+            self.sheets_model = GoogleSheetsModel()
+            
+            if self.sheets_model and hasattr(self.sheets_model, 'client') and self.sheets_model.client:
+                print("✅ Google Sheets connected")
+            else:
+                print("⚠️ Google Sheets offline - using SQLite only")
+                self.sheets_model = None
+        except Exception as e:
+            print(f"⚠️ Google Sheets init error: {e}")
+            print("ℹ️ System will continue with SQLite only")
             self.sheets_model = None
-    except Exception as e:
-        print(f"⚠️ Google Sheets init error: {e}")
-        print("ℹ️ System will continue with SQLite only")
-        self.sheets_model = None
     
     def _ensure_upload_folder(self):
         """Ensure upload folder exists"""
@@ -50,6 +45,17 @@ def _initialize_google_sheets(self):
                 print(f"✅ Upload folder exists: {self.upload_folder}")
         except Exception as e:
             print(f"❌ Error creating upload folder: {e}")
+    
+    def check_daily_limit(self, ip_address):
+        """Check if daily limit (10 reports per IP) has been reached"""
+        try:
+            today_count = self.flood_model.get_today_reports_count_by_ip(ip_address)
+            can_submit = today_count < 10
+            print(f"📊 Daily limit check: IP={ip_address}, Count={today_count}, CanSubmit={can_submit}")
+            return can_submit
+        except Exception as e:
+            print(f"⚠️ Error in check_daily_limit: {e}")
+            return True
     
     def submit_report(self, address, flood_height, reporter_name, reporter_phone=None, photo_file=None):
         """Submit new flood report"""
@@ -215,20 +221,8 @@ def _initialize_google_sheets(self):
             print(f"⚠️ Error getting IP: {e}")
             return "unknown_user"
     
-    def check_daily_limit(self, ip_address):
-        """Check if daily limit (10 reports per IP) has been reached"""
-        try:
-            today_count = self.flood_model.get_today_reports_count_by_ip(ip_address)
-            can_submit = today_count < 10
-            print(f"📊 Daily limit check: IP={ip_address}, Count={today_count}, CanSubmit={can_submit}")
-            return can_submit
-        except Exception as e:
-            print(f"⚠️ Error in check_daily_limit: {e}")
-            return True
-    
     def is_google_sheets_available(self):
         """Check if Google Sheets is available"""
         return (self.sheets_model is not None and 
                 hasattr(self.sheets_model, 'client') and 
                 self.sheets_model.client is not None)
-
