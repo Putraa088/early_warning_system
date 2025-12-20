@@ -21,22 +21,18 @@ def show_monthly_reports_summary(controller):
     </style>
     """, unsafe_allow_html=True)
     
-    # Get reports
     reports = controller.get_month_reports()
     
     if not reports:
         st.info(" Tidak ada laporan banjir untuk bulan ini.")
         return
     
-    # Daftar laporan
     current_month = datetime.now().strftime('%B %Y')
     total_reports = len(reports)
     
-    # Filter untuk mendapatkan laporan hari ini
     today = datetime.now().strftime('%Y-%m-%d')
     today_reports = [r for r in reports if r.get('report_date') == today]
     
-    # Statistics
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Total Laporan", total_reports)
@@ -53,7 +49,6 @@ def show_monthly_reports_summary(controller):
     
     st.markdown(f"###  Daftar Laporan Bulan {current_month}")
     
-    # Tampilkan laporan
     for i, report in enumerate(reports, 1):
         with st.container():
             col1, col2, col3, col4, col5 = st.columns([4, 2, 2, 2, 1])
@@ -61,7 +56,7 @@ def show_monthly_reports_summary(controller):
             with col1:
                 address_text = f"**{i}. {report.get('Alamat', 'N/A')}**"
                 if report.get('report_date') == today:
-                    st.markdown(f"{address_text} 🆕", unsafe_allow_html=True)
+                    st.markdown(f"{address_text} ", unsafe_allow_html=True)
                 else:
                     st.markdown(address_text, unsafe_allow_html=True)
                 
@@ -90,7 +85,6 @@ def show_monthly_reports_summary(controller):
                 else:
                     st.write("📭")
         
-        # Divider antar laporan
         if i < total_reports:
             st.divider()
 
