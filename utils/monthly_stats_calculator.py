@@ -14,15 +14,12 @@ class MonthlyStatsCalculator:
                 'response_time_avg': 0
             }
         
-        # Hitung total reports
         total_reports = len(reports)
         
-        # Hitung area paling sering
         area_counts = {}
         for report in reports:
             address = report.get('address', '')
             if address:
-                # Extract jalan from address
                 import re
                 match = re.search(r'(Jl\.|Jalan)\s+([^,]+)', address)
                 if match:
@@ -33,7 +30,6 @@ class MonthlyStatsCalculator:
         if area_counts:
             most_affected_area = max(area_counts, key=area_counts.get)
         
-        # Hitung hari dengan laporan
         dates = set()
         for report in reports:
             report_date = report.get('report_date', '')
@@ -44,10 +40,10 @@ class MonthlyStatsCalculator:
         
         return {
             'total_reports': total_reports,
-            'avg_risk': 0.0,  # Placeholder, bisa dihitung dari predictions
+            'avg_risk': 0.0,  
             'high_risk_days': high_risk_days,
-            'most_affected_area': most_affected_area[:50],  # Limit length
-            'response_time_avg': 45  # Placeholder
+            'most_affected_area': most_affected_area[:50],  
+            'response_time_avg': 45  
         }
     
     @staticmethod
