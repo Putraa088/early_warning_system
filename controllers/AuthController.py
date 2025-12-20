@@ -23,6 +23,7 @@ class AuthController:
             return False, f"Error: {str(e)}"
 
     def register(self, email, password, full_name, confirm_password):
+        """Register new user"""
         try:
             if not all([email, password, full_name, confirm_password]):
                 return False, "Semua field harus diisi"
@@ -39,6 +40,7 @@ class AuthController:
             if len(full_name) < 3:
                 return False, "Nama lengkap minimal 3 karakter"
             
+            # Create user
             user_id = self.user_model.create_user(email, password, full_name)
             if user_id:
                 return True, "Registrasi berhasil! Silakan login."
@@ -49,10 +51,11 @@ class AuthController:
             return False, str(e)
 
     def _is_valid_email(self, email):
+        """Basic email validation"""
         import re
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         return re.match(pattern, email) is not None
 
     def logout(self):
-
+        """Logout user"""
         return True, "Logout berhasil"
