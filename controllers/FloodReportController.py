@@ -75,7 +75,6 @@ class FloodReportController:
                     
                     print(f"📸 Saving photo to: {photo_path}")
                     
-                    # Save photo
                     with open(photo_path, "wb") as f:
                         f.write(photo_file.getbuffer())
                     
@@ -176,20 +175,16 @@ class FloodReportController:
             conn = sqlite3.connect('flood_system.db')
             cursor = conn.cursor()
             
-            # Dapatkan bulan dan tahun saat ini
             current_date = datetime.now()
             current_year_month = current_date.strftime('%Y-%m')
             
-            # Generate list 12 bulan terakhir
             months_data = []
-            for i in range(11, -1, -1):  # 11 bulan sebelumnya + bulan ini
-                # Hitung bulan
+            for i in range(11, -1, -1):  
                 month_offset = i
                 target_date = current_date - timedelta(days=30*month_offset)
                 year_month = target_date.strftime('%Y-%m')
-                month_name = target_date.strftime('%b')  # Jan, Feb, dst
+                month_name = target_date.strftime('%b')  
                 
-                # Query jumlah laporan untuk bulan ini
                 query = """
                 SELECT COUNT(*) as report_count
                 FROM flood_reports 
@@ -200,7 +195,6 @@ class FloodReportController:
                 result = cursor.fetchone()
                 report_count = result[0] if result else 0
                 
-                # Tentukan jika ini bulan berjalan
                 is_current = (year_month == current_year_month)
                 
                 months_data.append({
@@ -212,11 +206,9 @@ class FloodReportController:
             
             conn.close()
             
-            # Hitung total dan rata-rata
             total_reports = sum(item['report_count'] for item in months_data)
             avg_per_month = total_reports / len(months_data) if months_data else 0
             
-            # Cari bulan dengan laporan terbanyak
             if months_data:
                 max_item = max(months_data, key=lambda x: x['report_count'])
                 max_month = max_item['month_name']
