@@ -2,13 +2,13 @@ import sqlite3
 import os
 
 class VisitorModel:
-    _initialized = False  # ✅ Tambahkan flag untuk mencegah inisialisasi berulang
+    _initialized = False  
     
     def __init__(self):
         self.db_path = 'flood_system.db'
         if not VisitorModel._initialized:
             self.init_database()
-            VisitorModel._initialized = True  # ✅ Set flag setelah inisialisasi
+            VisitorModel._initialized = True  
 
     def init_database(self):
         """Initialize database and tables"""
@@ -16,7 +16,6 @@ class VisitorModel:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            # Create visitor_stats table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS visitor_stats (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,7 +28,6 @@ class VisitorModel:
                 )
             ''')
             
-            # Create popular_pages table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS popular_pages (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,7 +38,6 @@ class VisitorModel:
                 )
             ''')
             
-            # Create indexes
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_visit_date ON visitor_stats(visit_date)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_page_visited ON visitor_stats(page_visited)')
             
@@ -83,19 +80,16 @@ class VisitorModel:
             conn = self.get_connection()
             cursor = conn.cursor()
             
-            # Check if page exists
             cursor.execute('SELECT id, visit_count FROM popular_pages WHERE page_url = ?', (page_url,))
             existing = cursor.fetchone()
             
             if existing:
-                # Update existing
                 cursor.execute('''
                     UPDATE popular_pages 
                     SET visit_count = visit_count + 1, last_visited = CURRENT_TIMESTAMP 
                     WHERE id = ?
                 ''', (existing[0],))
             else:
-                # Insert new
                 cursor.execute('''
                     INSERT INTO popular_pages (page_url, page_title, visit_count) 
                     VALUES (?, ?, 1)
@@ -133,8 +127,8 @@ class VisitorModel:
             conn = self.get_connection()
             cursor = conn.cursor()
             
-            first_day = self.get_current_date()[:8] + '01'  # YYYY-MM-01
-            last_day = self.get_current_date()[:8] + '31'   # YYYY-MM-31
+            first_day = self.get_current_date()[:8] + '01'  
+            last_day = self.get_current_date()[:8] + '31'   
             
             cursor.execute('''
                 SELECT COUNT(DISTINCT ip_address) as count 
@@ -191,7 +185,6 @@ class VisitorModel:
             print(f"Error getting popular pages: {e}")
             return []
 
-    # Helper methods
     def get_client_ip(self):
         """Get client IP address"""
         try:
