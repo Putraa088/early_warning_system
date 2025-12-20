@@ -2,14 +2,13 @@ import sqlite3
 from datetime import datetime
 import os
 import traceback
-import pytz  # ✅ DITAMBAHKAN
+import pytz  
 
 class FloodReportModel:
     def __init__(self, db_path='flood_system.db'):
         self.db_path = db_path
         print(f"📂 Database path: {os.path.abspath(db_path)}")
         
-        # ✅ Timezone untuk Indonesia (WIB)
         self.tz_wib = pytz.timezone('Asia/Jakarta')
         
         self.init_database()
@@ -36,7 +35,6 @@ class FloodReportModel:
             
             cursor = conn.cursor()
             
-            # ✅ Buat tabel dengan nama kolom baru (Google Sheets format)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS flood_reports (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,7 +54,6 @@ class FloodReportModel:
             
             conn.commit()
             
-            # Cek struktur tabel
             cursor.execute("PRAGMA table_info(flood_reports)")
             columns = cursor.fetchall()
             print(f"✅ Table 'flood_reports' ready with {len(columns)} columns")
@@ -73,10 +70,9 @@ class FloodReportModel:
             return False
     
     def create_report(self, alamat, tinggi_banjir, nama_pelapor, 
-                      no_hp=None, photo_url=None, ip_address=None):
+                    no_hp=None, photo_url=None, ip_address=None):
         """Create new flood report dengan waktu WIB"""
         try:
-            # ✅ Gunakan waktu WIB
             current_time_wib = datetime.now(self.tz_wib)
             timestamp = current_time_wib.strftime("%Y-%m-%d %H:%M:%S")
             report_date = current_time_wib.strftime("%Y-%m-%d")
@@ -98,12 +94,11 @@ class FloodReportModel:
             
             cursor = conn.cursor()
             
-            # ✅ INSERT dengan nama kolom baru
             cursor.execute('''
                 INSERT INTO flood_reports 
                 ("Timestamp", "Alamat", "Tinggi Banjir", "Nama Pelapor", 
-                 "No HP", "IP Address", "Photo URL", "Status",
-                 report_date, report_time)
+                "No HP", "IP Address", "Photo URL", "Status",
+                report_date, report_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 timestamp,
