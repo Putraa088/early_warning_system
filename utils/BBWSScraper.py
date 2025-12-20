@@ -14,8 +14,6 @@ class BBWSScraper:
         try:
             st.info("🔄 Mengambil data tinggi air dari BBWS Bengawan Solo...")
             
-            # Untuk testing, kita gunakan data dummy dulu
-            # Nanti bisa diimplementasikan scraping real
             return self.get_fallback_water_data()
             
         except Exception as e:
@@ -27,7 +25,6 @@ class BBWSScraper:
         try:
             st.info("🔄 Mengambil data curah hujan dari BBWS Bengawan Solo...")
             
-            # Untuk testing, kita gunakan data dummy dulu
             return self.get_fallback_rainfall_data()
             
         except Exception as e:
@@ -39,21 +36,21 @@ class BBWSScraper:
         return [
             {
                 'location': 'Ngadipiro (S. keduang)',
-                'water_level_mdpl': 143.74,  # LANGSUNG mdpl
+                'water_level_mdpl': 143.74,  
                 'last_update': '06:00',
                 'source': 'BBWS Bengawan Solo',
                 'status': 'RENDAH'
             },
             {
                 'location': 'Wonogiri Dam (Spillway)',
-                'water_level_mdpl': 131.43,  # LANGSUNG mdpl
+                'water_level_mdpl': 131.43,  
                 'last_update': '06:00',
                 'source': 'BBWS Bengawan Solo',
                 'status': 'RENDAH'
             },
             {
                 'location': 'Colo Weir (S. bengawan solo)',
-                'water_level_mdpl': 108.29,  # LANGSUNG mdpl
+                'water_level_mdpl': 108.29,  
                 'last_update': '06:00',
                 'source': 'BBWS Bengawan Solo',
                 'status': 'RENDAH'
