@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""Final test seluruh sistem - VERSION TERBARU"""
-
 import sqlite3
 import os
 from datetime import datetime
@@ -10,7 +7,6 @@ def test_complete_system():
     print("🎯 FINAL SYSTEM TEST - VERSION TERBARU")
     print("=" * 60)
     
-    # 1. Test SQLite database
     print("\n1. Testing SQLite database...")
     db_path = 'flood_system.db'
     
@@ -19,7 +15,6 @@ def test_complete_system():
         print("   Running database initialization...")
         
         try:
-            # Inisialisasi database sederhana
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
             
@@ -49,17 +44,14 @@ def test_complete_system():
     else:
         print(f"✅ Database exists: {os.path.getsize(db_path)} bytes")
     
-    # 2. Test koneksi ke database
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
-        # Cek struktur
         cursor.execute("PRAGMA table_info(flood_reports)")
         columns = cursor.fetchall()
         print(f"✅ SQLite table has {len(columns)} columns")
         
-        # Cek data
         cursor.execute('SELECT COUNT(*) FROM flood_reports')
         count = cursor.fetchone()[0]
         print(f"📊 Total reports in SQLite: {count}")
@@ -75,7 +67,6 @@ def test_complete_system():
     except Exception as e:
         print(f"❌ SQLite error: {e}")
     
-    # 3. Test uploads folder
     print("\n2. Testing uploads folder...")
     uploads_folder = 'uploads'
     
@@ -88,7 +79,6 @@ def test_complete_system():
     else:
         print(f"✅ Uploads folder exists")
     
-    # 4. Test timezone
     print("\n3. Testing timezone (WIB)...")
     try:
         tz_wib = pytz.timezone('Asia/Jakarta')
@@ -97,7 +87,6 @@ def test_complete_system():
     except Exception as e:
         print(f"⚠️ Timezone error: {e}")
     
-    # 5. Test credentials.json
     print("\n4. Checking credentials.json...")
     if os.path.exists('credentials.json'):
         import json
