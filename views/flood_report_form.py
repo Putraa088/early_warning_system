@@ -8,7 +8,6 @@ def show_flood_report_form(controller):
         st.caption("Isi form di bawah untuk melaporkan kondisi banjir di sekitar Anda")
         
         with st.form("flood_report_form", clear_on_submit=True):
-            # Form fields
             col1, col2 = st.columns(2)
             
             with col1:
@@ -31,7 +30,7 @@ def show_flood_report_form(controller):
                 )
                 
                 reporter_phone = st.text_input(
-                    "Nomor Telepon ",
+                    "Nomor Telepon* ",
                     placeholder="0812-3456-7890",
                     help="untuk konfirmasi"
                 )
