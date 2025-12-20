@@ -394,7 +394,7 @@ def setup_sidebar():
             ("Lapor Banjir", "Lapor Banjir"),
             ("Catatan Laporan", "Catatan Laporan"),  
             ("Prediksi Real-time", "Prediksi Banjir"),
-            ("Kalkulator Banjir", "Kalkulator Banjir")
+            ("Simulasi Banjir", "Simulasi Banjir")
         ]
 
         st.markdown('<div style="margin: 10px 0;">', unsafe_allow_html=True)
@@ -481,7 +481,7 @@ def show_flood_calculator_page():
     st.markdown(
         """
         <div class="prediction-header">
-            <h1 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 800;">Kalkulator Banjir</h1>
+            <h1 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 800;">Simulasi Banjir</h1>
             <p style="color: #dfe9ec !important; font-size: 1.2rem; font-weight: 400;">
                 Masukkan parameter cuaca untuk mendapatkan prediksi risiko banjir yang akurat
             </p>
@@ -1003,7 +1003,7 @@ def main():
         "Harian": show_harian_page,
         "Bulanan": show_bulanan_page,
         "Prediksi Banjir": show_prediction_page,
-        "Kalkulator Banjir": show_flood_calculator_page
+        "Simulasi Banjir": show_flood_calculator_page
     }
 
     # Get current page handler
