@@ -1,24 +1,39 @@
-USER INTERFACE (app.py)
+flood-monitoring-system/
 │
-└── 📘 Panduan
-│    └── views/panduan_page.py
+├── app.py  # Main application entry point
 │
-├── 📝 Lapor Banjir
-│   ├── views/flood_report_form.py
-│   └── controllers/FloodReportController.py
-│       ├── models/FloodReportModel.py (SQLite)
-│       └── models/GoogleSheetsModel.py (Cloud)
+├── panduan/
+│   └── views/
+│       └── panduan_page.py  # Guide/help page
 │
-├── 📋 Catatan Laporan
-│   ├── views/flood_reports_table.py (Harian)
-│   ├── views/monthly_reports.py (Bulanan)
-│   └── controllers/FloodReportController.py
+├── lapor_banjir/
+│   ├── views/
+│   │   └── flood_report_form.py  # Flood reporting form UI
+│   │
+│   └── controllers/
+│       └── FloodReportController.py  # Controls flood report logic
+│           │
+│           └── models/
+│               ├── FloodReportModel.py  # Local database (SQLite) operations
+│               └── GoogleSheetsModel.py  # Cloud synchronization (Google Sheets)
 │
-├── 📊 Prediksi Real-time
-│   ├── views/prediction_dashboard.py
-│   └── controllers/RealTimeDataController.py
-│       ├── model_ann.py (AI)
-│       └── gumbel_distribution.py (Stats)
+├── catatan_laporan/
+│   ├── views/
+│   │   ├── flood_reports_table.py  # Daily reports table view
+│   │   └── monthly_reports.py  # Monthly reports view
+│   │
+│   └── controllers/
+│       └── FloodReportController.py  # Shared controller for reports
 │
-└── 🧮 Simulasi Banjir
-    └── model_ann.py (langsung)
+├── prediksi_realtime/
+│   ├── views/
+│   │   └── prediction_dashboard.py  # Real-time prediction dashboard UI
+│   │
+│   └── controllers/
+│       └── RealTimeDataController.py  # Manages real-time data processing
+│           │
+│           ├── model_ann.py  # Artificial Neural Network for predictions
+│           └── gumbel_distribution.py  # Statistical analysis using Gumbel distribution
+│
+└── simulasi_banjir/
+    └── model_ann.py  # Direct ANN model for flood simulations
