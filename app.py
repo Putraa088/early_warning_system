@@ -384,26 +384,15 @@ else:
 # ==================== SIDEBAR NAVIGATION ====================
 def setup_sidebar():
     with st.sidebar:
-        st.markdown(
-            """
-            <div class="sidebar-header">
-                <div class="sidebar-title">SISTEM BANJIR</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        
-        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-
         # Initialize session state untuk navigation
         if 'current_page' not in st.session_state:
             st.session_state.current_page = "Home"
         
-        # Menu utama (TANPA SUBMENU)
+        # Menu utama 
         menu_items = [
             ("Home", "Home"),
             ("Lapor Banjir", "Lapor Banjir"),
-            ("Catatan Laporan", "Catatan Laporan"),  # SEKARANG MENU BIASA
+            ("Catatan Laporan", "Catatan Laporan"),  
             ("Prediksi Real-time", "Prediksi Banjir"),
             ("Kalkulator Banjir", "Kalkulator Banjir")
         ]
@@ -420,7 +409,7 @@ def setup_sidebar():
         
         st.markdown('</div>', unsafe_allow_html=True)
         
-        st.markdown("### Kontak")
+        st.markdown("### Kontak Kami:")
         
         with st.container():
             st.markdown("**LOKASI**")
@@ -762,9 +751,8 @@ def show_catatan_laporan_page():
     st.markdown(
         """
         <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Catatan Laporan</h2>
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Executive Dashboard: Laporan & Statistik</h2>
             <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
-                Pilih jenis laporan yang ingin dilihat
             </p>
         </div>
         """,
@@ -814,9 +802,8 @@ def show_harian_page():
     st.markdown(
         """
         <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Laporan Harian</h2>
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Manajemen Laporan 24 jam</h2>
             <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
-                Informasi banjir yang tercatat hari ini.
             </p>
         </div>
         """,
@@ -837,9 +824,8 @@ def show_bulanan_page():
     st.markdown(
         """
         <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Rekapan Bulanan</h2>
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Sistem Monitoring & Evaluasi Laporan</h2>
             <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
-                Analisis dan statistik laporan bulan ini beserta data historis 1 tahun.
             </p>
         </div>
         """,
@@ -983,9 +969,8 @@ def show_flood_report_page():
     st.markdown(
         """
         <div class="hero-section" style="padding: 30px; margin-bottom: 30px;">
-            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Form Laporan Banjir</h2>
+            <h2 style="color: var(--accent) !important; margin-bottom: 15px; font-weight: 700;">Laporkan kondisi banjir di sekitar Anda untuk membantu kami melakukan langkah penanggulangan</h2>
             <p style="color: #dfe9ec !important; font-size: 1.1rem; font-weight: 400;">
-                Laporkan kejadian banjir di sekitar Anda untuk membantu sistem peringatan dini.
             </p>
         </div>
         """,
