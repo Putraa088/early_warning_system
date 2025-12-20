@@ -22,4 +22,3 @@ USER INTERFACE (app.py)
 │
 └── 🧮 Simulasi Banjir
     └── model_ann.py (langsung)
-
