@@ -5,13 +5,13 @@ from datetime import datetime
 import re
 
 class UserModel:
-    _initialized = False  # ✅ Tambahkan flag untuk mencegah inisialisasi berulang
+    _initialized = False  
     
     def __init__(self):
         self.db_path = 'flood_system.db'
         if not UserModel._initialized:
             self.init_database()
-            UserModel._initialized = True  # ✅ Set flag setelah inisialisasi
+            UserModel._initialized = True 
 
     def init_database(self):
         """Initialize database and tables for users"""
@@ -19,7 +19,6 @@ class UserModel:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            # Create users table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,11 +33,9 @@ class UserModel:
                 )
             ''')
             
-            # Create indexes
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_email ON users(email)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_role ON users(role)')
             
-            # Insert default users if not exists
             default_users = [
                 ('admin@banjir.com', self._hash_password('admin123'), 'Administrator Sistem', 'admin'),
                 ('user@banjir.com', self._hash_password('user123'), 'User Demo', 'user'),
@@ -85,7 +82,6 @@ class UserModel:
             conn.close()
             
             if user and self.verify_password(password, user[2]):
-                # Update last login
                 self.update_last_login(user[0])
                 
                 return {
