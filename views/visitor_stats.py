@@ -48,16 +48,12 @@ def show_visitor_stats(stats):
     </style>
     """, unsafe_allow_html=True)
     
-    # Main container
     st.markdown('<div class="visitor-stats-container">', unsafe_allow_html=True)
     
-    # Header
     st.markdown('<div class="stats-header"><h3> STATISTIK PENGUNJUNG</h3></div>', unsafe_allow_html=True)
     
-    # Stats grid
     st.markdown('<div class="stats-grid">', unsafe_allow_html=True)
     
-    # Today visitors
     st.markdown(f'''
     <div class="stat-card">
         <div class="stat-number">{stats.get('today', 0)}</div>
@@ -65,7 +61,6 @@ def show_visitor_stats(stats):
     </div>
     ''', unsafe_allow_html=True)
     
-    # Month visitors
     st.markdown(f'''
     <div class="stat-card">
         <div class="stat-number">{stats.get('month', 0)}</div>
@@ -73,7 +68,6 @@ def show_visitor_stats(stats):
     </div>
     ''', unsafe_allow_html=True)
     
-    # Online visitors
     st.markdown(f'''
     <div class="stat-card">
         <div class="stat-number">{stats.get('online', 0)}</div>
