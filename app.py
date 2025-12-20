@@ -115,6 +115,7 @@ try:
     from views.flood_reports_table import show_current_month_reports
     from views.monthly_reports import show_monthly_reports_summary
     from views.prediction_dashboard import show_prediction_dashboard
+    from views.panduan_page import show_panduan_page 
 except Exception as e:
     st.error(f"Import Error Views: {e}")
 
@@ -129,6 +130,9 @@ except Exception as e:
 
     def show_prediction_dashboard(*args, **kwargs):
         st.info("Prediction dashboard not available")
+    
+    def show_panduan_page():  
+        st.info("Panduan tidak tersedia")
 
 # ==================== CSS THEME ====================
 CSS_THEME = r"""
@@ -383,9 +387,9 @@ def setup_sidebar():
         if 'current_page' not in st.session_state:
             st.session_state.current_page = "Home"
         
-        # Menu utama 
         menu_items = [
             ("Home", "Home"),
+            ("Panduan", "Panduan"),  
             ("Lapor Banjir", "Lapor Banjir"),
             ("Catatan Laporan", "Catatan Laporan"),  
             ("Prediksi Real-time", "Prediksi Banjir"),
@@ -963,6 +967,7 @@ def main():
 
     page_handlers = {
         "Home": show_homepage,
+        "Panduan": show_panduan_page,  
         "Lapor Banjir": show_flood_report_page,
         "Catatan Laporan": show_catatan_laporan_page,
         "Harian": show_harian_page,
