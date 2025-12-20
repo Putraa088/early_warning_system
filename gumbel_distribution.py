@@ -6,18 +6,14 @@ def predict_flood_gumbel(rainfall, return_period=10):
     Prediksi menggunakan distribusi Gumbel untuk extreme value analysis
     """
     try:
-        # Parameter Gumbel berdasarkan data historis
-        mu = 85.0   # location parameter
-        beta = 22.5 # scale parameter
+        mu = 85.0   
+        beta = 22.5 
         
-        # Hitung probability menggunakan CDF Gumbel
         z = (rainfall - mu) / beta
         probability = math.exp(-math.exp(-z))
         
-        # Risk level berdasarkan probability
         risk_level = min(1.0, probability * 1.5)
         
-        # Tentukan status
         if risk_level >= 0.7:
             status = "TINGGI"
         elif risk_level >= 0.4:
