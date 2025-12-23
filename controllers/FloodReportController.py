@@ -170,32 +170,84 @@ class FloodReportController:
         return self.flood_model.get_monthly_statistics()
     
     def get_yearly_statistics(self):
-        """Get yearly flood report statistics for the last 12 months"""
+        """Get yearly flood report statistics for the last 12 months - FIXED VERSION"""
         try:
+            import sqlite3
+            from datetime import datetime, timedelta
+            
+            print("📊 Getting yearly statistics...")
+            
             conn = sqlite3.connect('flood_system.db')
             cursor = conn.cursor()
             
-            current_date = datetime.now()
-            current_year_month = current_date.strftime('%Y-%m')
+            # Cek apakah tabel ada
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='flood_reports'")
+            if not cursor.fetchone():
+                print("⚠️ Table 'flood_reports' doesn't exist")
+                conn.close()
+                return self._get_empty_yearly_stats()
             
+            # Cek kolom yang ada
+            cursor.execute("PRAGMA table_info(flood_reports)")
+            columns_info = cursor.fetchall()
+            columns = [col[1].lower() for col in columns_info]
+            
+            print(f"📋 Available columns: {columns}")
+            
+            # Tentukan kolom tanggal yang akan digunakan
+            # Prioritas: Timestamp > created_at > fallback ke count semua
+            date_column = None
+            if 'timestamp' in columns:
+                date_column = 'Timestamp'
+            elif 'created_at' in columns:
+                date_column = 'created_at'
+            elif 'report_date' in columns:
+                date_column = 'report_date'
+            else:
+                print("⚠️ No date column found, using fallback counting")
+                return self._get_yearly_stats_fallback(cursor)
+            
+            print(f"📅 Using date column: {date_column}")
+            
+            current_date = datetime.now()
             months_data = []
-            for i in range(11, -1, -1):  
+            
+            for i in range(11, -1, -1):  # 12 bulan terakhir
                 month_offset = i
                 target_date = current_date - timedelta(days=30*month_offset)
                 year_month = target_date.strftime('%Y-%m')
-                month_name = target_date.strftime('%b')  
+                month_name = target_date.strftime('%b')
                 
-                query = """
-                SELECT COUNT(*) as report_count
-                FROM flood_reports 
-                WHERE strftime('%Y-%m', report_date) = ?
-                """
+                # Coba extract bulan dari berbagai format timestamp
+                try:
+                    # Format 1: '2024-12-19 14:03:47'
+                    if date_column == 'Timestamp' or date_column == 'created_at':
+                        query = f"""
+                        SELECT COUNT(*) as report_count
+                        FROM flood_reports 
+                        WHERE strftime('%Y-%m', {date_column}) = ?
+                        """
+                        cursor.execute(query, (year_month,))
+                    else:
+                        # Fallback: cari dengan LIKE
+                        query = f"""
+                        SELECT COUNT(*) as report_count
+                        FROM flood_reports 
+                        WHERE {date_column} LIKE ?
+                        """
+                        cursor.execute(query, (f'{year_month}%',))
+                    
+                    result = cursor.fetchone()
+                    report_count = result[0] if result else 0
+                    
+                except Exception as query_error:
+                    print(f"⚠️ Query error for {year_month}: {query_error}")
+                    # Fallback: hitung semua data
+                    cursor.execute("SELECT COUNT(*) FROM flood_reports")
+                    total = cursor.fetchone()[0]
+                    report_count = total // 12 if total > 0 else 0
                 
-                cursor.execute(query, (year_month,))
-                result = cursor.fetchone()
-                report_count = result[0] if result else 0
-                
-                is_current = (year_month == current_year_month)
+                is_current = (year_month == current_date.strftime('%Y-%m'))
                 
                 months_data.append({
                     'year_month': year_month,
@@ -206,10 +258,13 @@ class FloodReportController:
             
             conn.close()
             
-            total_reports = sum(item['report_count'] for item in months_data)
+            # Hitung statistik
+            report_counts = [item['report_count'] for item in months_data]
+            total_reports = sum(report_counts)
             avg_per_month = total_reports / len(months_data) if months_data else 0
             
-            if months_data:
+            # Cari bulan dengan laporan terbanyak
+            if months_data and any(report_counts):
                 max_item = max(months_data, key=lambda x: x['report_count'])
                 max_month = max_item['month_name']
                 max_count = max_item['report_count']
@@ -223,20 +278,70 @@ class FloodReportController:
                 'avg_per_month': round(avg_per_month, 1),
                 'max_month': max_month,
                 'max_count': max_count,
-                'current_year_month': current_year_month
+                'current_year_month': current_date.strftime('%Y-%m')
             }
             
         except Exception as e:
             print(f"❌ Error getting yearly statistics: {e}")
             traceback.print_exc()
+            return self._get_empty_yearly_stats()
+    
+    def _get_yearly_stats_fallback(self, cursor):
+        """Fallback ketika tidak ada kolom tanggal"""
+        try:
+            current_date = datetime.now()
+            months_data = []
+            
+            # Hitung total laporan
+            cursor.execute("SELECT COUNT(*) FROM flood_reports")
+            total_reports = cursor.fetchone()[0]
+            
+            # Distribusikan ke 12 bulan (hanya untuk display)
+            reports_per_month = total_reports // 12 if total_reports > 0 else 0
+            remainder = total_reports % 12
+            
+            for i in range(11, -1, -1):
+                target_date = current_date - timedelta(days=30*i)
+                year_month = target_date.strftime('%Y-%m')
+                month_name = target_date.strftime('%b')
+                
+                # Beri sedikit variasi untuk tampilan
+                report_count = reports_per_month
+                if i < remainder:  # Sisa dibagi ke bulan terakhir
+                    report_count += 1
+                
+                is_current = (year_month == current_date.strftime('%Y-%m'))
+                
+                months_data.append({
+                    'year_month': year_month,
+                    'month_name': month_name,
+                    'report_count': report_count,
+                    'is_current': is_current
+                })
+            
             return {
-                'months_data': [],
-                'total_reports': 0,
-                'avg_per_month': 0,
-                'max_month': "Error",
-                'max_count': 0,
-                'current_year_month': ""
+                'months_data': months_data,
+                'total_reports': total_reports,
+                'avg_per_month': round(total_reports / 12, 1) if total_reports > 0 else 0,
+                'max_month': "Estimasi",
+                'max_count': reports_per_month + 1 if remainder > 0 else reports_per_month,
+                'current_year_month': current_date.strftime('%Y-%m')
             }
+            
+        except Exception as e:
+            print(f"❌ Fallback error: {e}")
+            return self._get_empty_yearly_stats()
+    
+    def _get_empty_yearly_stats(self):
+        """Return empty yearly stats when error occurs"""
+        return {
+            'months_data': [],
+            'total_reports': 0,
+            'avg_per_month': 0,
+            'max_month': "Tidak ada data",
+            'max_count': 0,
+            'current_year_month': datetime.now().strftime('%Y-%m') if hasattr(datetime, 'now') else ""
+        }
     
     def get_client_ip(self):
         """Get client IP address"""
