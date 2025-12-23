@@ -7,6 +7,7 @@ import streamlit as st
 import traceback
 import sqlite3
 from datetime import timedelta
+import pandas as pd
 
 class FloodReportController:
     def __init__(self):
@@ -170,93 +171,61 @@ class FloodReportController:
         return self.flood_model.get_monthly_statistics()
     
     def get_yearly_statistics(self):
-        """Get yearly flood report statistics for the last 12 months - FIXED VERSION"""
+        """Get yearly flood report statistics - READ DIRECTLY FROM GOOGLE SHEETS"""
         try:
-            import sqlite3
+            # Coba baca dari Google Sheets
+            if self.sheets_model and self.sheets_model.client:
+                print("📊 Getting yearly stats from Google Sheets...")
+                return self._get_yearly_stats_from_gsheets()
+            else:
+                print("⚠️ Google Sheets offline, using SQLite fallback")
+                return self._get_yearly_stats_from_sqlite()
+                
+        except Exception as e:
+            print(f"❌ Error getting yearly statistics: {e}")
+            traceback.print_exc()
+            return self._get_empty_yearly_stats()
+    
+    def _get_yearly_stats_from_gsheets(self):
+        """Get stats directly from Google Sheets"""
+        try:
             from datetime import datetime, timedelta
             
-            print("📊 Getting yearly statistics...")
+            # Ambil data dari Google Sheets
+            worksheet = self.sheets_model.worksheet
+            all_records = worksheet.get_all_records()
             
-            conn = sqlite3.connect('flood_system.db')
-            cursor = conn.cursor()
+            print(f"📊 Found {len(all_records)} records in Google Sheets")
             
-            # Cek apakah tabel ada
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='flood_reports'")
-            if not cursor.fetchone():
-                print("⚠️ Table 'flood_reports' doesn't exist")
-                conn.close()
+            if not all_records:
+                print("⚠️ No records found in Google Sheets")
                 return self._get_empty_yearly_stats()
             
-            # Cek kolom yang ada
-            cursor.execute("PRAGMA table_info(flood_reports)")
-            columns_info = cursor.fetchall()
-            columns = [col[1].lower() for col in columns_info]
-            
-            print(f"📋 Available columns: {columns}")
-            
-            # Tentukan kolom tanggal yang akan digunakan
-            # Prioritas: Timestamp > created_at > fallback ke count semua
-            date_column = None
-            if 'timestamp' in columns:
-                date_column = 'Timestamp'
-            elif 'created_at' in columns:
-                date_column = 'created_at'
-            elif 'report_date' in columns:
-                date_column = 'report_date'
-            else:
-                print("⚠️ No date column found, using fallback counting")
-                return self._get_yearly_stats_fallback(cursor)
-            
-            print(f"📅 Using date column: {date_column}")
-            
+            # Persiapan data
             current_date = datetime.now()
             months_data = []
             
+            # Hitung per bulan
             for i in range(11, -1, -1):  # 12 bulan terakhir
-                month_offset = i
-                target_date = current_date - timedelta(days=30*month_offset)
+                target_date = current_date - timedelta(days=30*i)
                 year_month = target_date.strftime('%Y-%m')
                 month_name = target_date.strftime('%b')
                 
-                # Coba extract bulan dari berbagai format timestamp
-                try:
-                    # Format 1: '2024-12-19 14:03:47'
-                    if date_column == 'Timestamp' or date_column == 'created_at':
-                        query = f"""
-                        SELECT COUNT(*) as report_count
-                        FROM flood_reports 
-                        WHERE strftime('%Y-%m', {date_column}) = ?
-                        """
-                        cursor.execute(query, (year_month,))
-                    else:
-                        # Fallback: cari dengan LIKE
-                        query = f"""
-                        SELECT COUNT(*) as report_count
-                        FROM flood_reports 
-                        WHERE {date_column} LIKE ?
-                        """
-                        cursor.execute(query, (f'{year_month}%',))
-                    
-                    result = cursor.fetchone()
-                    report_count = result[0] if result else 0
-                    
-                except Exception as query_error:
-                    print(f"⚠️ Query error for {year_month}: {query_error}")
-                    # Fallback: hitung semua data
-                    cursor.execute("SELECT COUNT(*) FROM flood_reports")
-                    total = cursor.fetchone()[0]
-                    report_count = total // 12 if total > 0 else 0
+                # Hitung berapa record di bulan ini
+                count = 0
+                for record in all_records:
+                    timestamp = record.get('Timestamp', '')
+                    if timestamp and year_month in timestamp:
+                        count += 1
                 
                 is_current = (year_month == current_date.strftime('%Y-%m'))
                 
                 months_data.append({
                     'year_month': year_month,
                     'month_name': month_name,
-                    'report_count': report_count,
+                    'report_count': count,
                     'is_current': is_current
                 })
-            
-            conn.close()
             
             # Hitung statistik
             report_counts = [item['report_count'] for item in months_data]
@@ -272,31 +241,45 @@ class FloodReportController:
                 max_month = "Tidak ada data"
                 max_count = 0
             
+            print(f"✅ Google Sheets stats: {total_reports} total reports")
+            
             return {
                 'months_data': months_data,
                 'total_reports': total_reports,
                 'avg_per_month': round(avg_per_month, 1),
                 'max_month': max_month,
                 'max_count': max_count,
-                'current_year_month': current_date.strftime('%Y-%m')
+                'current_year_month': current_date.strftime('%Y-%m'),
+                'source': 'Google Sheets'
             }
             
         except Exception as e:
-            print(f"❌ Error getting yearly statistics: {e}")
-            traceback.print_exc()
-            return self._get_empty_yearly_stats()
+            print(f"❌ Error reading Google Sheets: {e}")
+            return self._get_yearly_stats_from_sqlite()
     
-    def _get_yearly_stats_fallback(self, cursor):
-        """Fallback ketika tidak ada kolom tanggal"""
+    def _get_yearly_stats_from_sqlite(self):
+        """Fallback: Get stats from SQLite"""
         try:
-            current_date = datetime.now()
-            months_data = []
+            import sqlite3
+            from datetime import datetime, timedelta
             
-            # Hitung total laporan
+            conn = sqlite3.connect('flood_system.db')
+            cursor = conn.cursor()
+            
+            # Cek apakah tabel ada
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='flood_reports'")
+            if not cursor.fetchone():
+                conn.close()
+                return self._get_empty_yearly_stats()
+            
+            # Hitung total
             cursor.execute("SELECT COUNT(*) FROM flood_reports")
             total_reports = cursor.fetchone()[0]
             
-            # Distribusikan ke 12 bulan (hanya untuk display)
+            current_date = datetime.now()
+            months_data = []
+            
+            # Distribusi per bulan (estimate)
             reports_per_month = total_reports // 12 if total_reports > 0 else 0
             remainder = total_reports % 12
             
@@ -305,7 +288,7 @@ class FloodReportController:
                 year_month = target_date.strftime('%Y-%m')
                 month_name = target_date.strftime('%b')
                 
-                # Beri sedikit variasi untuk tampilan
+                # Estimasi distribusi
                 report_count = reports_per_month
                 if i < remainder:  # Sisa dibagi ke bulan terakhir
                     report_count += 1
@@ -319,17 +302,20 @@ class FloodReportController:
                     'is_current': is_current
                 })
             
+            conn.close()
+            
             return {
                 'months_data': months_data,
                 'total_reports': total_reports,
                 'avg_per_month': round(total_reports / 12, 1) if total_reports > 0 else 0,
-                'max_month': "Estimasi",
+                'max_month': "Estimasi" if total_reports > 0 else "Tidak ada data",
                 'max_count': reports_per_month + 1 if remainder > 0 else reports_per_month,
-                'current_year_month': current_date.strftime('%Y-%m')
+                'current_year_month': current_date.strftime('%Y-%m'),
+                'source': 'SQLite (estimasi)'
             }
             
         except Exception as e:
-            print(f"❌ Fallback error: {e}")
+            print(f"❌ SQLite stats error: {e}")
             return self._get_empty_yearly_stats()
     
     def _get_empty_yearly_stats(self):
@@ -340,7 +326,8 @@ class FloodReportController:
             'avg_per_month': 0,
             'max_month': "Tidak ada data",
             'max_count': 0,
-            'current_year_month': datetime.now().strftime('%Y-%m') if hasattr(datetime, 'now') else ""
+            'current_year_month': datetime.now().strftime('%Y-%m') if hasattr(datetime, 'now') else "",
+            'source': 'Error'
         }
     
     def get_client_ip(self):
